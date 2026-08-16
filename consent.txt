@@ -1,0 +1,45 @@
+Consent Document
+Facilitate Belief Updating with Human-AI Teaming: Knowledge Acquisition with Information Exchange and Seeking
+
+Principal Investigator Name and Title: Jessie Chin, Associate Professor
+Department and Institution: School of Information Sciences, University of Illinois Urbana-Champaign
+Contact Information: chin5@illinois.edu
+
+BACKGROUND
+You are being asked to participate in a research study at the University of Illinois at Urbana-Champaign. Before you decide, it is important for you to understand why the research is being done and what it will involve. Please take time to read the following information carefully. Ask us if there is anything that is not clear or if you would like more information. Take time to decide whether you want to volunteer to take part in this study. Your participation in this research is voluntary. If you decide to participate, you are free to withdraw at any time. The purpose of this study is to develop ways to better support people in active learning by interacting with an AI system. Participation in this study will help us identify and refine human-AI interaction strategies that promote deeper conceptual understanding, provide empirical evidence to inform the design of educational AI systems, and advance the development of AI learning tools that move beyond passive information delivery toward actively facilitating conceptual change, ultimately benefiting the broader population of self-directed learners.
+
+STUDY PROCEDURE
+The study procedures are (1) completing pre-study questionnaires about demographic information, prior knowledge, and learning-related beliefs, (2) reading an assigned article on a target concept and drawing an initial concept map, (3) engaging in structured discussion with the AI Study Peer and self-directed search, and (4) completing post-study questionnaires assessing learning outcomes and overall experience. The entire study will be conducted via Zoom, with the researcher present as a silent observer, and will last approximately 60 minutes.
+ 
+RISKS
+ The risks associated with this study are minimal. Because we will collect your contact information to schedule the Zoom appointment, there is a risk of loss of confidentiality of participating in the study. To protect your privacy, researchers will deidentify any study-related data s and store them confidentially. Only authorized research personnel will have access to your data. If you feel uncomfortable or upset at any time, you may stop participating and leave the study at any time.
+
+ 
+BENEFITS
+We cannot guarantee any direct benefits from participating in this study. However, potential benefits may include the opportunity to practice explaining complex topics, to strengthen your understanding of concepts that often underlie common misunderstandings, and to reflect more deeply on how knowledge and beliefs are formed.
+ 
+ HOW WILL THE RESEARCHERS PROTECT MY INFORMATION?
+We will not collect any identifiable information from you, which is not needed in our study. We will store the collected in a secure, UIUC-approved online location: UIUC Box.
+ 
+WHO WILL HAVE ACCESS TO THE INFORMATION COLLECTED DURING THIS STUDY?
+Efforts will be made to limit the use and disclosure of your personal information, including research study records, to people who need to review this information. We cannot promise complete secrecy.
+There are reasons why information about you may be used or seen by other people beyond the research team during or after this study. Examples include:
+ 
+● University officials, government officials, study funders, auditors, and the Institutional Review Board may need access to the study information to make sure the study is done safely and appropriately. 
+ 
+HOW MIGHT THE INFORMATION COLLECTED IN THIS STUDY BE SHARED IN THE FUTURE?
+We will keep the information we collect about you during this research study for study recordkeeping. De-identified data from this study may be shared with the research community, with journals in which study results are published.
+ 
+PERSON TO CONTACT
+If you have any questions, concerns about this study, or if you believe you have experienced harm as a result of your participation, you may contact Dr. Chin at chin5@illinois.edu.
+ 
+Institutional Review Board: If you have any questions about your rights as a research subject, including concerns, complaints, or to offer input, you may call the Office for the Protection of Research Subjects (OPRS) at 217-333-2670 or e-mail OPRS at irb@illinois.edu. If you would like to complete a brief survey to provide OPRS feedback about your experiences as a research participant, please follow the link here or through a link on the OPRS website: https://oprs.research.illinois.edu/. You will have the option to provide feedback or concerns anonymously or you may provide your name and contact information for follow-up purposes.
+ 
+VOLUNTARY PARTICIPATION
+Research studies include only people who choose to take part. You can tell us that you don’t want to be in this study. You can start the study and then choose to stop the study later. This will not affect your relationship with the investigator.
+ 
+COSTS AND COMPENSATION TO PARTICIPANTS
+The compensation is $15 for a study that takes approximately 60 minutes.
+ 
+CONSENT
+I confirm I have read the information in this consent form and have had the opportunity to ask questions. I will be given a signed copy of this consent form. I voluntarily agree to take part in this study.

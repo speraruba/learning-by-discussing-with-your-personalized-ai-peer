@@ -1,0 +1,5 @@
+fastapi>=0.110
+uvicorn>=0.29
+openai>=1.30
+pydantic>=2.6
+PyMySQL>=1.1

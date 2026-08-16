@@ -1,0 +1,37 @@
+# ---- 密钥与本地配置(绝对不要提交)----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+build/
+dist/
+
+# ---- 虚拟环境 ----
+.venv/
+venv/
+env/
+ENV/
+
+# ---- 本地数据与日志(实验数据现存于 MySQL)----
+data/
+*.db
+*.sqlite3
+*.log
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# ---- 测试与缓存 ----
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
