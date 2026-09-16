@@ -1,0 +1,10 @@
+# Topic: AI Extends Human Cognition
+# Phase: 2
+# Learning Goal
+How does AI change the cognitive processes involved in learning and knowledge construction?
+
+# Reading Material
+Learning requires cognitive engagement, but greater mental effort does not automatically produce greater learning. Some effort contributes directly to understanding, while other effort is consumed by searching, organizing information, correcting surface-level errors, or struggling without useful feedback. AI can improve learning by reducing these less productive demands while supporting the cognitive processes that matter.
+The distinction is between cognitive replacement and cognitive scaffolding. If AI simply completes a task, the learner may contribute little. But AI can instead provide examples, feedback, hints, explanations, and alternative perspectives that help learners construct knowledge themselves. Active and constructive engagement is particularly important for learning because learners develop understanding by generating, connecting, and revising ideas rather than merely receiving information (Chi, 2009).
+Recent experimental evidence shows that reduced effort and improved learning can occur together. Lira et al. (2026) found that participants who practiced professional writing with generative AI reported less effort during practice but later produced better writing when AI was removed. Participants who studied AI-improved examples also showed substantial improvement. The researchers concluded that AI can increase the efficiency of learning by improving the quality of examples available to learners.
+These findings challenge the assumption that AI necessarily makes learning shallow. When AI handles unproductive difficulty while leaving interpretation, evaluation, and knowledge construction to the learner, less effort can produce more effective learning. Used this way, AI functions as a cognitive coach: it supports the processes through which expertise develops rather than replacing them.

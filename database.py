@@ -2,7 +2,7 @@
 """
 后端数据库(MySQL)。
 表结构:
-- users:    受试者账号与背景问卷(用户名/邮箱唯一,密码加盐哈希)
+- participants: 受试者(participant_id 为研究者分配的唯一身份码 + 姓名 + 人口学信息)
 - sessions: 一次受试者实验会话(记录当前阶段、状态、冲突计数)
 - messages: 全部对话历史(含阶段、环节、角色、是否触发认知冲突、模型判定理由)
 
@@ -16,9 +16,9 @@ MYSQL_HOST / MYSQL_PORT / MYSQL_USER / MYSQL_PASSWORD / MYSQL_DB
 """
 import os
 import time
+import functools
 import uuid
 import json
-import hashlib
 import threading
 from datetime import datetime, timezone
 
@@ -37,34 +37,63 @@ _TABLE_OPTIONS = "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_
 # ---------------------------------------------------------------- 表结构声明
 # columns 按声明顺序建表;新增列时追加到列表中即可,启动时会自动 ADD COLUMN。
 SCHEMA: dict[str, dict] = {
-    "users": {
+    # 受试者:无账号密码,participant_id 是研究者分配的唯一身份码。
+    # 唯一性由 uq_participants_pid 保证(列排序规则 utf8mb4_unicode_ci,大小写不敏感)。
+    # 人口学信息(Demographic Information)在同意知情同意书后、实验开始前采集。
+    "participants": {
         "columns": [
             ("id", "VARCHAR(32) NOT NULL"),
-            ("username", "VARCHAR(64) NOT NULL"),
-            ("email", "VARCHAR(255) NOT NULL"),
-            ("password_hash", "CHAR(64) NOT NULL"),
-            ("salt", "CHAR(32) NOT NULL"),
+            ("participant_id", "VARCHAR(64) NOT NULL"),
+            ("name", "VARCHAR(64) NULL"),               # 受试者姓名,老用户重新进入时核对
+            ("birth_date", "DATE NULL"),
             ("age", "INT NULL"),
-            ("education", "VARCHAR(32) NULL"),
-            ("major", "VARCHAR(128) NULL"),
-            ("ai_level", "TINYINT NULL"),                       # 0-10 整体熟悉度
-            ("ai_principle_level", "TINYINT NULL"),             # 0-10 原理了解度
-            ("ai_frequency", "VARCHAR(32) NULL"),
-            ("ai_purpose", "JSON NULL"),                        # 多选,存字符串数组
-            ("ai_purpose_other", "VARCHAR(255) NULL"),           # 用途选 other 时的自填内容
-            ("ai_used_for_learning", "TINYINT(1) NOT NULL DEFAULT 0"),
+            ("gender", "VARCHAR(16) NULL"),             # male | female
+            ("education_years", "VARCHAR(16) NULL"),    # 正规教育年限档位:1-7.5/8/9-11.5/12/12.5-15.5/16/18/20
+            ("native_english", "TINYINT(1) NULL"),
+            ("first_language", "VARCHAR(64) NULL"),     # 非英语母语时填写
+            ("english_age", "INT NULL"),                # 非英语母语时:开始学英语的年龄
+            ("hispanic", "TINYINT(1) NULL"),            # 是否 Hispanic or Latino
+            ("race", "VARCHAR(40) NULL"),               # 种族类别(单选)
+            ("major", "VARCHAR(100) NULL"),             # 主修专业
+            ("second_major", "VARCHAR(100) NULL"),      # 第二主修专业(如有)
+            ("minor", "VARCHAR(100) NULL"),             # 辅修(如有)
+            # AI Literacy Scale(Wang et al.)12 条目,7 点李克特。
+            # 每列存受试者的原始作答(1-7,不做反转);ails_score 存反向计分后的总分:
+            # AW_8/US_3/ET_2 为反向条目,计入总分前按 8-原始分 反转(7→1,6→2,…,4→4)。
+            ("ails_aw_1", "TINYINT NULL"),
+            ("ails_aw_8", "TINYINT NULL"),              # R 反向条目
+            ("ails_aw_9", "TINYINT NULL"),
+            ("ails_us_1", "TINYINT NULL"),
+            ("ails_us_3", "TINYINT NULL"),              # R 反向条目
+            ("ails_us_5", "TINYINT NULL"),
+            ("ails_ev_2", "TINYINT NULL"),
+            ("ails_ev_3", "TINYINT NULL"),
+            ("ails_ev_6", "TINYINT NULL"),
+            ("ails_et_1", "TINYINT NULL"),
+            ("ails_et_2", "TINYINT NULL"),              # R 反向条目
+            ("ails_et_5", "TINYINT NULL"),
+            ("ails_score", "SMALLINT NULL"),            # 反向计分后 12 条目总分(12-84)
+            # 大语言模型（LLM）使用及学习方式；多选题以 JSON 数组保存。
+            ("llm_use_frequency", "VARCHAR(32) NULL"),
+            ("llm_use_purposes", "JSON NULL"),
+            ("llm_use_other", "VARCHAR(255) NULL"),
+            ("llm_used_for_learning", "TINYINT(1) NULL"),
+            ("llm_learning_frequency", "VARCHAR(32) NULL"),
+            ("llm_learning_methods", "JSON NULL"),
+            ("llm_learning_other", "VARCHAR(255) NULL"),
             ("created_at", "DATETIME(6) NOT NULL"),
         ],
         "primary_key": "`id`",
         "indexes": {
-            "uq_users_username": "UNIQUE KEY `uq_users_username` (`username`)",
-            "uq_users_email": "UNIQUE KEY `uq_users_email` (`email`)",
+            "uq_participants_pid": "UNIQUE KEY `uq_participants_pid` (`participant_id`)",
         },
     },
     "sessions": {
         "columns": [
             ("id", "VARCHAR(32) NOT NULL"),
+            # participants.participant_id;老受试者靠它找回上次会话(每主题一条、每人至多两条,见 app.start_session / end_rest)
             ("participant", "VARCHAR(64) NULL"),
+            ("topic", "INT NOT NULL DEFAULT 1"),           # 本会话对应的主题号(一个主题一条 session)
             ("phase", "INT NOT NULL DEFAULT 1"),
             ("state", "VARCHAR(20) NOT NULL DEFAULT 'reading'"),
             ("conflicts", "INT NOT NULL DEFAULT 0"),
@@ -117,7 +146,26 @@ SCHEMA: dict[str, dict] = {
                                          "REFERENCES `sessions` (`id`) ON DELETE CASCADE",
         },
     },
-    # AI 推测的受试者因果关联图(搜索环节结束后生成并展示),含受试者 0-10 评分
+    # 考试页作答(主题 2 的 3 轮讨论+搜索结束后):每题一行,题目文本随答案一并存档
+    "exam_answers": {
+        "columns": [
+            ("id", "BIGINT NOT NULL AUTO_INCREMENT"),
+            ("session_id", "VARCHAR(32) NOT NULL"),
+            ("question_no", "INT NOT NULL"),
+            ("question", "TEXT NOT NULL"),
+            ("answer", "TEXT NOT NULL"),
+            ("created_at", "DATETIME(6) NOT NULL"),
+        ],
+        "primary_key": "`id`",
+        "indexes": {
+            "idx_exam_answers_session": "KEY `idx_exam_answers_session` (`session_id`, `question_no`)",
+        },
+        "foreign_keys": {
+            "fk_exam_answers_session": "CONSTRAINT `fk_exam_answers_session` FOREIGN KEY (`session_id`) "
+                                       "REFERENCES `sessions` (`id`) ON DELETE CASCADE",
+        },
+    },
+    # AI 推测的受试者因果关联图(旧流程遗留数据;当前流程不再生成),含受试者 0-10 评分
     "causal_graphs": {
         "columns": [
             ("id", "BIGINT NOT NULL AUTO_INCREMENT"),
@@ -166,6 +214,36 @@ def _conn():
             _local.conn = None
     conn = _local.conn = _connect(DB_NAME)
     return conn
+
+
+def _drop_conn():
+    conn = getattr(_local, "conn", None)
+    _local.conn = None
+    if conn is not None:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+# 连接在查询途中被服务端掐断时的错误号
+_LOST_CONN_ERRNOS = {2006, 2013, 2055}      # server has gone away / lost connection / 连接被重置
+
+
+def _retrying(fn):
+    """连接中途断开时重连并重试一次。只用于读操作:写操作重试可能造成重复入库,
+    交给上层的幂等接口(/retry-turn 等)处理。"""
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except (pymysql.err.OperationalError, pymysql.err.InterfaceError) as e:
+            if e.args and e.args[0] not in _LOST_CONN_ERRNOS:
+                raise
+            print(f"[db] 连接中断({e.args[0] if e.args else '?'}),重连后重试 {fn.__name__}")
+            _drop_conn()
+            return fn(*args, **kwargs)
+    return wrapper
 
 
 def _now():
@@ -294,15 +372,27 @@ def _sync_table(cur, table: str, spec: dict):
 
 
 # ---------------------------------------------------------------- sessions
-def create_session(participant: str = "") -> dict:
+def create_session(participant: str = "", topic: int = 1, phase: int = 1) -> dict:
+    """建一条会话。一个主题对应一条独立 session:主题 1 在受试者点"开始"时建,
+    主题 2 在休息页结束时建(见 app.end_rest);phase 沿用全局 1-6 编号。"""
     sid = uuid.uuid4().hex
     with _conn().cursor() as cur:
         cur.execute(
-            "INSERT INTO sessions (id, participant, phase, state, conflicts, created_at, updated_at) "
-            "VALUES (%s, %s, 1, 'reading', 0, %s, %s)",
-            (sid, participant, _now(), _now()),
+            "INSERT INTO sessions (id, participant, topic, phase, state, conflicts, created_at, updated_at) "
+            "VALUES (%s, %s, %s, %s, 'reading', 0, %s, %s)",
+            (sid, participant, topic, phase, _now(), _now()),
         )
     return get_session(sid)
+
+
+def get_latest_session(participant: str) -> dict | None:
+    """该 participant 最近一次会话。老受试者重新进入时据此恢复到上次停留的环节。"""
+    with _conn().cursor() as cur:
+        cur.execute(
+            "SELECT * FROM sessions WHERE participant=%s ORDER BY created_at DESC, id DESC LIMIT 1",
+            (participant,),
+        )
+        return cur.fetchone()
 
 
 def get_session(sid: str) -> dict | None:
@@ -357,6 +447,22 @@ def get_search_queries(sid: str) -> list[dict]:
         return list(cur.fetchall())
 
 
+# ---------------------------------------------------------------- exam answers
+def add_exam_answer(sid: str, question_no: int, question: str, answer: str):
+    with _conn().cursor() as cur:
+        cur.execute(
+            "INSERT INTO exam_answers (session_id, question_no, question, answer, created_at) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            (sid, question_no, question, answer, _now()),
+        )
+
+
+def get_exam_answers(sid: str) -> list[dict]:
+    with _conn().cursor() as cur:
+        cur.execute("SELECT * FROM exam_answers WHERE session_id=%s ORDER BY question_no ASC, id ASC", (sid,))
+        return list(cur.fetchall())
+
+
 # ---------------------------------------------------------------- causal graphs
 def add_causal_graph(sid: str, phase: int, graph: dict) -> int:
     with _conn().cursor() as cur:
@@ -392,55 +498,65 @@ def get_causal_graphs(sid: str) -> list[dict]:
     return rows
 
 
-# ---------------------------------------------------------------- users
-def _hash_password(password: str, salt: bytes | None = None) -> tuple[str, str]:
-    salt = salt or os.urandom(16)
-    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100_000)
-    return digest.hex(), salt.hex()
+# ---------------------------------------------------------------- participants
+class DuplicateParticipantId(Exception):
+    """participant_id 已被占用(唯一索引冲突)。"""
 
 
-def create_user(username: str, email: str, password: str, age: int | None,
-                 education: str, major: str, ai_level: int | None, ai_principle_level: int | None,
-                 ai_frequency: str, ai_purpose: str, ai_purpose_other: str,
-                 ai_used_for_learning: bool) -> dict:
+def create_participant(participant_id: str, name: str, demo: dict | None = None) -> dict:
+    """写入受试者(姓名 + 唯一 id + 人口学信息)。participant_id 重复时抛 DuplicateParticipantId。
+
+    唯一性最终由 uq_participants_pid 决定:先查后插会有竞态,因此这里直接
+    依赖数据库报错,而不是只靠 get_participant() 的预检。"""
     uid = uuid.uuid4().hex
-    password_hash, salt = _hash_password(password)
-    with _conn().cursor() as cur:
-        cur.execute(
-            "INSERT INTO users (id, username, email, password_hash, salt, age, education, "
-            "major, ai_level, ai_principle_level, ai_frequency, ai_purpose, ai_purpose_other, "
-            "ai_used_for_learning, created_at) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-            (uid, username, email, password_hash, salt, age, education, major, ai_level,
-             ai_principle_level, ai_frequency, ai_purpose, ai_purpose_other or None,
-             int(ai_used_for_learning), _now()),
-        )
-    return get_user(uid)
+    demo = demo or {}
+    cols = ["id", "participant_id", "name", "created_at"]
+    vals = [uid, participant_id, name or None, _now()]
+    for k in ("birth_date", "age", "gender", "education_years", "native_english",
+              "first_language", "english_age", "hispanic", "race",
+              "major", "second_major", "minor",
+              "ails_aw_1", "ails_aw_8", "ails_aw_9", "ails_us_1", "ails_us_3", "ails_us_5",
+              "ails_ev_2", "ails_ev_3", "ails_ev_6", "ails_et_1", "ails_et_2", "ails_et_5",
+              "ails_score", "llm_use_frequency", "llm_use_purposes", "llm_use_other", "llm_used_for_learning",
+              "llm_learning_frequency", "llm_learning_methods", "llm_learning_other"):
+        if k in demo:
+            cols.append(k)
+            # PyMySQL 不会自动把 Python list 编码为 MySQL JSON。
+            vals.append(json.dumps(demo[k], ensure_ascii=False) if k in ("llm_use_purposes", "llm_learning_methods") else demo[k])
+    try:
+        with _conn().cursor() as cur:
+            cur.execute(
+                f"INSERT INTO participants ({', '.join(cols)}) "
+                f"VALUES ({', '.join(['%s'] * len(cols))})",
+                vals,
+            )
+    except pymysql.err.IntegrityError as e:
+        if e.args[0] == 1062:                       # ER_DUP_ENTRY
+            raise DuplicateParticipantId(participant_id) from e
+        raise
+    return get_participant_row(uid)
 
 
-def get_user(uid: str) -> dict | None:
+def set_participant_name(uid: str, name: str):
+    """补记姓名(此功能上线前注册的老受试者没有姓名,首次带姓名进入时写入)。"""
     with _conn().cursor() as cur:
-        cur.execute("SELECT * FROM users WHERE id=%s", (uid,))
+        cur.execute("UPDATE participants SET name=%s WHERE id=%s", (name, uid))
+
+
+def get_participant_row(uid: str) -> dict | None:
+    with _conn().cursor() as cur:
+        cur.execute("SELECT * FROM participants WHERE id=%s", (uid,))
         return cur.fetchone()
 
 
-def get_user_by_username(username: str) -> dict | None:
+def get_participant(participant_id: str) -> dict | None:
     with _conn().cursor() as cur:
-        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
+        cur.execute("SELECT * FROM participants WHERE participant_id=%s", (participant_id,))
         return cur.fetchone()
 
 
-def get_user_by_email(email: str) -> dict | None:
-    with _conn().cursor() as cur:
-        cur.execute("SELECT * FROM users WHERE email=%s", (email,))
-        return cur.fetchone()
-
-
-def verify_user(username: str, password: str) -> dict | None:
-    user = get_user_by_username(username)
-    if not user:
-        return None
-    digest, _ = _hash_password(password, bytes.fromhex(user["salt"]))
-    if digest != user["password_hash"]:
-        return None
-    return user
+# 读操作统一加一层"断线重连后重试一次"。写操作不自动重试,避免重复入库。
+for _name in ("get_session", "get_latest_session", "get_messages", "get_search_queries",
+              "get_exam_answers", "get_latest_causal_graph", "get_causal_graphs",
+              "get_participant", "get_participant_row"):
+    globals()[_name] = _retrying(globals()[_name])

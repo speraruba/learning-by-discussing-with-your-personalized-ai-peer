@@ -1,0 +1,33 @@
+# Topic: AI Creates Cognitive Dependency
+
+## Phase 1
+### Learning Goal
+How does AI redistribute limited human cognitive resources through cognitive offloading?
+### Reading Material
+Human cognitive resources are limited, making external tools attractive because they reduce the amount of information we must maintain and process internally (Baddeley & Hitch, 1974; Risko & Gilbert, 2016). Yet this convenience creates a fundamental trade-off: cognitive operations that are repeatedly performed externally no longer receive the same internal practice.
+Research on earlier digital technologies already demonstrates this pattern. When people expect information to remain available online, they are less likely to remember the information itself and more likely to remember where it can be found (Sparrow et al., 2011). GPS use can similarly reduce people's internal representation of routes. These findings suggest that cognitive systems adapt to reliable external resources by investing less effort in processes that technology can perform for them (Pearson, 2025).
+Generative AI greatly expands the scale of this offloading. Previous technologies primarily stored information or performed narrow calculations. AI can retrieve information, summarize readings, generate explanations, organize arguments, and even perform parts of reasoning and problem solving. Cognitive offloading can therefore move from externalizing information to externalizing the processes used to work with information.
+This matters because internal cognition is maintained through use. If retrieval, integration, organization, and reasoning are repeatedly delegated to AI, users have fewer opportunities to perform these operations themselves. Immediate tasks become easier, but independent cognition becomes less necessary.
+AI may therefore create more than cognitive convenience. By making external processing continuously available, it can encourage a cognitive architecture increasingly dependent on an external system, that one in which successful performance no longer guarantees that the individual can think or remember effectively without AI.
+
+
+## Phase 2
+### Learning Goal
+How does AI change the cognitive processes involved in learning and knowledge construction?
+### Reading Material
+The difficulty involved in learning is not always a problem to be eliminated. Retrieving information, generating explanations, comparing alternatives, making mistakes, and correcting them can make a task slower and harder, but these processes help build durable knowledge. Research on desirable difficulties shows that conditions that reduce immediate performance can sometimes improve long-term retention and transfer (Bjork, 1994).
+Generative AI can bypass precisely this productive struggle. Instead of searching across sources, learners can request a summary. Instead of constructing an explanation, they can request one. Instead of attempting a solution and identifying errors, they can ask AI to generate the solution immediately. The learner receives a high-quality product while performing less of the cognitive work required to create it.
+This creates a dangerous distinction between performance and learning. Cash et al. (2026) describe research in which students using an AI tool capable of solving mathematics problems performed better while AI was available. Once AI was removed, however, they performed worse than students who had practiced without it. The assistance improved immediate task performance while interfering with independent skill acquisition.
+Similar effects appear when AI replaces information search and synthesis: users can spend less time engaging with material and later demonstrate weaker knowledge or less original advice (Cash et al., 2026).
+AI can therefore create an illusion of competence. A learner may produce better answers and finish tasks faster while understanding less. When AI performs the reasoning, retrieval, and integration that learning normally requires, efficiency is gained by removing the very cognitive processes through which knowledge is constructed.
+
+## Phase 3
+### Learning Goal
+How does repeated AI use reshape human cognitive skills and long-term cognitive development?
+### Reading Material
+The greatest cognitive risk of AI may not appear while AI is being used. It may appear when the system is removed.
+Expertise develops and survives through repeated practice. If AI begins performing parts of perception, retrieval, reasoning, writing, diagnosis, or decision making, humans practice those operations less frequently. Macnamara et al. (2024) argue that AI assistance can therefore produce two related problems: it can hinder the development of new skills and accelerate the decay of skills people already possess.
+This risk can be difficult to recognize because AI often improves the performance of the combined human–AI system. A professional may continue producing accurate work and therefore believe that personal expertise remains unchanged. Yet high assisted performance does not reveal whether the person could achieve the same result independently. Macnamara et al. warn that users may experience skill decay without being aware of it because AI masks the consequences of reduced practice.
+Evidence from professional settings supports this concern. Research discussed by Cash et al. (2026) found that physicians' unaided detection performance declined after working in an environment where AI assistance was routinely available. Such findings suggest that cognitive skills can deteriorate when relevant operations are repeatedly delegated to AI.
+The long-term danger is therefore cognitive deskilling. As AI becomes more capable, humans may become increasingly successful with AI while becoming less capable without it. This creates a paradox: technological performance rises while independent human competence falls.
+If AI continually removes the need to retrieve, reason, evaluate, and decide independently, cognitive dependency may accumulate gradually. The central risk is not that AI fails, but that humans eventually lose some of the expertise needed to recognize and recover when it does.

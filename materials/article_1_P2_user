@@ -1,0 +1,9 @@
+# Topic: AGI Achieved
+# Phase: 2
+# Learning Goal
+How is AI trained (pattern matching, probability, etc.)?
+
+# Reading Material
+Large language models are trained using enormous collections of text gathered from books, websites, articles, and other written sources. During training, the model repeatedly predicts the next word in a sentence and adjusts billions of internal parameters to improve its predictions. Because the training process is based on statistical relationships and probability, critics often describe these systems as performing sophisticated pattern matching. However, supporters argue that the way intelligence develops should not be confused with how intelligence is evaluated.
+After training, modern AI systems are capable of much more than repeating memorized examples. They can solve unfamiliar mathematical problems, reason across multiple domains, interpret both images and text, and respond appropriately to situations that were never explicitly encountered during training. Researchers suggest that these abilities indicate the emergence of internal representations, sometimes referred to as world models, which enable AI systems to generalize knowledge, make predictions, and reason about hypothetical situations.
+Importantly, the expert argue that intelligence does not require human-like learning mechanisms. Human intelligence is produced by biological evolution and neural processes, whereas AI learns through optimization and statistical prediction. Although these mechanisms are fundamentally different, different learning processes do not necessarily imply different levels of intelligence. If a system consistently demonstrates flexible reasoning and broad competence across diverse tasks, its intelligence should be evaluated by its capabilities rather than by the specific method through which those capabilities were acquired.

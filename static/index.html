@@ -28,36 +28,30 @@
   #logoutBtn{font-size:13px; color:var(--accent); background:var(--accent-soft);
          border:none; padding:5px 12px; border-radius:99px; cursor:pointer;}
   #logoutBtn:hover{opacity:.85;}
-  /* 语言切换:EN / 中 分段开关,当前语言高亮 */
-  .langSwitch{display:inline-flex; background:var(--accent-soft); border-radius:99px; padding:2px;}
-  .langSwitch button{font-size:12px; font-weight:600; line-height:1; color:var(--accent);
-         background:none; border:none; padding:5px 11px; border-radius:99px; cursor:pointer;
-         transition:background .15s, color .15s;}
-  .langSwitch button:hover:not(.active){background:rgba(61,90,128,.12);}
-  .langSwitch button.active{background:var(--accent); color:#fff; cursor:default;}
   main{flex:1; overflow:hidden; display:flex; justify-content:center;}
   .panel{width:min(880px,94%); display:flex; flex-direction:column; padding:28px 20px; overflow:hidden;}
-  #login, #consent, #register, #start, #finish{overflow-y:auto;}
-  #login .center, #consent .center, #register .center, #start .center, #finish .center{margin:auto; padding:24px 0;}
+  #entry, #consent, #demog, #background, #start, #finish{overflow-y:auto;}
+  #entry .center, #consent .center, #demog .center, #background .center, #start .center, #finish .center{margin:auto; padding:24px 0;}
 
   /* 阅读面板 */
   #reading{overflow-y:auto;}
   #article{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
            padding:40px 52px; font-family:Georgia,serif; font-size:17px;
            line-height:1.9; white-space:pre-wrap;}
-  /* AI 翻译提示条 */
-  .transNote{display:flex; align-items:center; gap:9px; margin-bottom:12px; padding:8px 14px;
-       background:#fff8e6; border:1px solid #f0e0b8; border-radius:var(--radius);
-       font-size:12.5px; color:#8a6d3b;}
-  .transNote[hidden]{display:none;}
-  .transBadge{flex-shrink:0; background:#8a6d3b; color:#fff; font-weight:600;
-       padding:2px 8px; border-radius:99px; font-size:11px;}
   #doneBtn{margin:24px auto 0; display:block; background:var(--accent); color:#fff; border:none;
            font-size:15px; padding:13px 40px; border-radius:var(--radius); cursor:pointer;}
   #doneBtn:hover{opacity:.92;}
 
-  /* 聊天面板(搜索页复用同一套样式) */
-  #chat{display:none;}
+  /* 讨论+搜索合并面板:左讨论右搜索,双栏同屏 */
+  #chat{display:none; width:min(1500px,96%); flex-direction:row; gap:18px;}
+  .pane{flex:1; min-width:0; display:flex; flex-direction:column; border:1px solid var(--line);
+        border-radius:var(--radius); padding:12px 14px 14px; background:rgba(255,255,255,.4);}
+  .pane.active{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft);}
+  .paneHead{display:flex; align-items:center; justify-content:space-between; gap:10px;
+        margin-bottom:8px; min-height:34px;}
+  .paneTitle{font-size:12.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+        color:var(--ink-soft);}
+  .pane.active .paneTitle{color:var(--accent);}
   #msgs, #searchMsgs{flex:1; overflow-y:auto; padding:4px 6px; display:flex; flex-direction:column; gap:14px;}
   .msg{max-width:65%; padding:12px 16px; border-radius:var(--radius); font-size:15px;
        line-height:1.7; white-space:pre-wrap;}
@@ -73,26 +67,33 @@
            padding:0 32px; font-size:15px; cursor:pointer;}
   #sendBtn:hover:not(:disabled), #searchSendBtn:hover:not(:disabled){opacity:.92;}
   #sendBtn:disabled, #searchSendBtn:disabled{opacity:.5; cursor:default;}
+  #input:disabled, #searchInput:disabled{background:var(--paper); color:var(--ink-soft); cursor:not-allowed;}
   #endSearchBtn{background:var(--accent-soft); color:var(--accent); border:none; font-size:14px;
       padding:9px 22px; border-radius:99px; cursor:pointer; font-weight:600;}
   #endSearchBtn:hover:not(:disabled){opacity:.85;}
   #endSearchBtn:disabled{opacity:.5; cursor:default;}
   #searchMsgs .msg a{color:var(--accent); font-size:13px; word-break:break-all;}
 
-  /* 因果图评分页 */
-  #causal{overflow-y:auto;}
-  .causalCard{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-      padding:28px 34px; margin:auto 0;}
-  .causalCard h2{font-size:19px; margin-bottom:6px;}
-  .causalDesc{color:var(--ink-soft); font-size:14px; line-height:1.7; margin-bottom:18px;}
-  #causalSvgWrap{border:1px solid var(--line); border-radius:var(--radius); background:var(--paper);
-      overflow-x:auto; margin-bottom:22px;}
-  #causalSvgWrap svg{display:block; margin:0 auto;}
-  .causalRate{max-width:560px; margin:0 auto;}
-  #causalSubmitBtn{display:block; margin:20px auto 0; background:var(--accent); color:#fff; border:none;
-      font-size:15px; padding:12px 38px; border-radius:var(--radius); cursor:pointer;}
-  #causalSubmitBtn:hover:not(:disabled){opacity:.92;}
-  #causalSubmitBtn:disabled{opacity:.5; cursor:default;}
+  /* 休息页 */
+  #rest{overflow-y:auto;}
+  #rest .center{margin:auto; padding:24px 0;}
+
+  /* 考试页 */
+  #exam{overflow-y:auto;}
+  .examCard{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+      padding:32px 40px; margin:auto 0;}
+  .examCard h2{font-size:20px; margin-bottom:6px; text-align:center;}
+  .examSub{color:var(--ink-soft); font-size:14px; line-height:1.7; margin-bottom:22px; text-align:center;}
+  .examItem{margin-bottom:22px;}
+  .examItem .examQ{font-size:15px; line-height:1.7; margin-bottom:10px; font-weight:600;}
+  .examItem textarea{width:100%; min-height:110px; resize:vertical; border:1px solid var(--line);
+      border-radius:var(--radius); padding:12px 14px; font-size:14.5px; font-family:inherit;
+      line-height:1.7; background:var(--paper);}
+  .examItem textarea:focus{outline:2px solid var(--accent-soft); border-color:var(--accent);}
+  #examSubmitBtn{display:block; margin:8px auto 0; background:var(--accent); color:#fff; border:none;
+      font-size:15px; padding:13px 42px; border-radius:var(--radius); cursor:pointer;}
+  #examSubmitBtn:hover:not(:disabled){opacity:.92;}
+  #examSubmitBtn:disabled{opacity:.5; cursor:default;}
 
   /* 开始/结束页 */
   .center{margin:auto; text-align:center;}
@@ -101,7 +102,7 @@
                  padding:13px 46px; border-radius:var(--radius); cursor:pointer; display:block; margin:0 auto;}
   .center button:hover{opacity:.92;}
 
-  /* 登录/注册表单 */
+  /* 首页 / 问卷表单 */
   .authForm{width:400px; text-align:left; background:var(--card); border:1px solid var(--line);
             border-radius:var(--radius); padding:32px 36px; box-shadow:0 1px 3px rgba(0,0,0,.04);}
   .authForm.wide{width:640px;}
@@ -112,10 +113,6 @@
   .field input, .field select{width:100%; padding:10px 12px; border:1px solid var(--line);
        border-radius:var(--radius); font-size:14px; font-family:inherit; background:var(--paper);}
   .field input:focus, .field select:focus{outline:2px solid var(--accent-soft); border-color:var(--accent);}
-  .formGrid{display:grid; grid-template-columns:1fr 1fr; gap:0 20px;}
-  .formGrid .field.span2{grid-column:1 / -1;}
-  .row2{display:flex; gap:12px;}
-  .row2 .field{flex:1;}
   .sliderHead{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;}
   .sliderHead label{margin-bottom:0;}
   .sliderVal{min-width:30px; text-align:center; font-weight:700; color:#fff; background:var(--accent);
@@ -134,15 +131,6 @@
   .sliderRow input[type=range]::-moz-range-progress{height:6px; border-radius:99px; background:var(--accent);}
   .sliderLabels{display:flex; justify-content:space-between; margin-top:8px;
                 font-size:12px; color:var(--ink-soft);}
-  .toggleRow{display:flex; gap:20px; padding-top:2px;}
-  .radioOpt{display:flex; align-items:center; gap:6px; font-size:14px; cursor:pointer;}
-  .radioOpt input{width:auto; margin:0;}
-  .checkGrid{display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; padding-top:2px;}
-  .checkOpt{display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer;}
-  .checkOpt input{width:auto; margin:0; accent-color:var(--accent);}
-  /* 勾选 other 后出现的自填输入框 */
-  .otherInput{margin-top:10px;}
-  .otherInput[hidden]{display:none;}
   .authForm button.primary{width:100%; background:var(--accent); color:#fff; border:none; font-size:15px;
        padding:13px; border-radius:var(--radius); cursor:pointer; margin-top:8px;}
   .authForm button.primary:hover{opacity:.92;}
@@ -170,44 +158,99 @@
        font-size:14px; line-height:1.6; cursor:pointer;}
   .consentAgree input{width:auto; margin:3px 0 0; accent-color:var(--accent); flex-shrink:0;}
   #consentBtn:disabled{opacity:.45; cursor:not-allowed;}
+
+  /* 人口学信息页表单布局 */
+  .formGrid{display:grid; grid-template-columns:1fr 1fr; gap:0 20px;}
+  .formGrid .field.span2{grid-column:1 / -1;}
+  .dobRow{display:flex; gap:10px; align-items:center;}
+  .dobRow input{width:90px; text-align:center;}
+  .dobRow span{color:var(--ink-soft); font-size:13px;}
+  .unitRow{display:flex; gap:10px; align-items:center;}
+  .unitRow input{width:110px;}
+  .unitRow span{color:var(--ink-soft); font-size:13px;}
+  .toggleRow{display:flex; gap:20px; padding-top:2px;}
+  .radioOpt{display:flex; align-items:center; gap:6px; font-size:14px; cursor:pointer;}
+  .radioOpt input{width:auto; margin:0; accent-color:var(--accent);}
+  .radioList{display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; padding-top:2px;}
+  /* 非英语母语时展开的补充问题 */
+  .subQuestions{border-left:3px solid var(--accent-soft); padding-left:16px; margin-top:10px;}
+  .subQuestions[hidden]{display:none;}
+  .subQuestions .field{margin-bottom:12px;}
+
+  /* 背景调查(AILS)量表 */
+  .likertHead{display:flex; justify-content:space-between; font-size:12px; color:var(--ink-soft);
+      padding:0 0 10px; border-bottom:1px solid var(--line); margin-bottom:4px;}
+  .likertItem{padding:14px 0 16px; border-bottom:1px solid var(--line);}
+  .likertItem p{font-size:14px; line-height:1.6; margin-bottom:12px;}
+  .likertSlider{display:flex; align-items:center; gap:14px; max-width:440px;}
+  .likertSlider .sliderRow{flex:1;}
+  /* 未拖动过的题:滑块灰显,值徽章显示 "–" */
+  .likertSlider .sliderVal{min-width:30px;}
+  .likertSlider.untouched .sliderVal{background:var(--line); color:var(--ink-soft);}
+  .likertSlider.untouched input[type=range]::-webkit-slider-thumb{background:#b8c2cc;
+      box-shadow:0 0 0 1px #b8c2cc, 0 1px 3px rgba(0,0,0,.25);}
+  .likertSlider.untouched input[type=range]::-moz-range-thumb{background:#b8c2cc;
+      box-shadow:0 0 0 1px #b8c2cc, 0 1px 3px rgba(0,0,0,.25);}
+  .surveySection{margin-top:28px; padding-top:22px; border-top:2px solid var(--accent-soft);}
+  .surveySection h3{font-size:16px; margin-bottom:6px;}
+  .surveySection .sectionSub{font-size:13px; line-height:1.6; color:var(--ink-soft); margin-bottom:18px;}
+  .choiceList{display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;}
+  .choiceList .radioOpt{align-items:flex-start; line-height:1.4;}
+  .choiceList .radioOpt input{margin-top:3px;}
+  .conditionalQuestions{border-left:3px solid var(--accent-soft); padding-left:16px; margin-top:16px;}
+  .conditionalQuestions[hidden]{display:none;}
+
+  /* 结束页致谢卡片 */
+  .finishCard{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+      padding:44px 52px; max-width:560px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .finishMark{width:64px; height:64px; margin:0 auto 18px; border-radius:50%;
+      background:var(--accent-soft); color:var(--accent); font-size:30px; font-weight:700;
+      display:flex; align-items:center; justify-content:center;}
+  .finishCard h2{font-size:21px; margin-bottom:14px;}
+  .finishCard p{color:var(--ink-soft); font-size:15px; line-height:1.8; margin:0 0 14px;}
+  .finishBye{color:var(--accent) !important; font-weight:600; margin-top:6px !important;}
+
+  /* 断线提示条 */
+  #connBar{position:fixed; top:0; left:0; right:0; z-index:60; text-align:center;
+       padding:9px 16px; font-size:13px; background:#fdf3d5; color:#7a5c00;
+       border-bottom:1px solid #f0dfa8;}
+  #connBar.err{background:#fbeae7; color:var(--err); border-color:#f0c6bf;}
+  #connBar[hidden]{display:none;}
+  #connBar button{margin-left:12px; font-size:12px; border:none; border-radius:99px;
+       padding:3px 12px; cursor:pointer; background:rgba(0,0,0,.08); color:inherit;}
 </style>
 </head>
 <body>
+<div id="connBar" hidden></div>
 <header>
-  <h1 data-i18n="appTitle">Learning Partner</h1>
+  <h1>Learning Partner</h1>
   <span class="phase-pill" id="phasePill" hidden></span>
   <span class="phase-pill stage" id="stagePill" hidden></span>
   <span id="topic"></span>
   <div id="headerRight">
     <span id="userBadge" hidden></span>
-    <button id="logoutBtn" data-i18n="logout" hidden onclick="logout()">Log out</button>
-    <div class="langSwitch" id="langSwitch" role="group" aria-label="Language / 语言">
-      <button type="button" data-lang="en" onclick="setLang('en')">EN</button>
-      <button type="button" data-lang="zh" onclick="setLang('zh')">中</button>
-    </div>
+    <button id="logoutBtn" hidden onclick="logout()">Exit</button>
   </div>
 </header>
 <main>
-  <!-- 登录页 -->
-  <div class="panel" id="login">
+  <!-- 首页:输入 participant id -->
+  <div class="panel" id="entry">
     <div class="center">
-      <form class="authForm" onsubmit="return doLogin(event)">
-        <h2 data-i18n="loginTitle">Welcome back</h2>
-        <p class="sub" data-i18n="loginSub">Log in to continue the experiment</p>
-        <div class="errBox" id="loginErr"></div>
+      <form class="authForm" onsubmit="return enterParticipant(event)">
+        <h2>Learning Partner Study</h2>
+        <p class="sub">Enter your name and the Participant ID given to you by the researcher</p>
+        <div class="errBox" id="entryErr"></div>
         <div class="field">
-          <label data-i18n="username">Username</label>
-          <input id="loginUsername" autocomplete="username" required>
+          <label>Name</label>
+          <input id="entryName" autocomplete="name" maxlength="64"
+                 placeholder="Your name" required>
         </div>
         <div class="field">
-          <label data-i18n="password">Password</label>
-          <input id="loginPassword" type="password" autocomplete="current-password" required>
+          <label>Participant ID</label>
+          <input id="entryPid" autocomplete="off" autocapitalize="off" spellcheck="false"
+                 maxlength="64" placeholder="e.g. P001" required>
         </div>
-        <button class="primary" type="submit" data-i18n="loginBtn">Log in</button>
-        <div class="switchLine">
-          <span data-i18n="noAccount">No account yet?</span>
-          <a onclick="startRegistration()" data-i18n="registerLink">Register</a>
-        </div>
+        <button class="primary" type="submit">Log in</button>
       </form>
     </div>
   </div>
@@ -216,148 +259,288 @@
   <div class="panel" id="consent" style="display:none">
     <div class="center">
       <div class="authForm wide">
-        <h2 data-i18n="consentTitle">Informed Consent</h2>
-        <p class="sub" data-i18n="consentSub">Please read the following carefully before taking part</p>
-        <div class="consentBody" id="consentBody" data-i18n="consentBody"></div>
+        <h2>Informed Consent</h2>
+        <p class="sub">Please read the following carefully before taking part</p>
+        <div class="consentBody" id="consentBody"></div>
         <label class="consentAgree">
           <input type="checkbox" id="consentCheck" onchange="onConsentToggle()">
-          <span data-i18n="consentAgree">I have read and understood the above, and I voluntarily agree to take part in this study.</span>
+          <span>I have read and understood the above, and I voluntarily agree to take part in this study.</span>
         </label>
         <button class="primary" id="consentBtn" disabled onclick="acceptConsent()"
-                data-i18n="consentContinue">Agree and continue</button>
+               >Agree and continue</button>
         <div class="switchLine">
-          <a onclick="declineConsent()" data-i18n="consentDecline">Decline and go back</a>
+          <a onclick="declineConsent()">Decline and go back</a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 注册页 -->
-  <div class="panel" id="register" style="display:none">
+  <!-- 人口学信息页:同意知情同意书后填写 -->
+  <div class="panel" id="demog" style="display:none">
     <div class="center">
-      <form class="authForm wide" onsubmit="return doRegister(event)">
-        <h2 data-i18n="registerTitle">Create an account</h2>
-        <p class="sub" data-i18n="registerSub">Please fill in the details below</p>
-        <div class="errBox" id="registerErr"></div>
+      <form class="authForm wide" onsubmit="return submitDemographics(event)">
+        <h2>Demographic Information</h2>
+        <p class="sub">Please answer the following questions</p>
+        <div class="errBox" id="demogErr"></div>
         <div class="formGrid">
-          <div class="field">
-            <label data-i18n="username">Username</label>
-            <input id="regUsername" required>
-          </div>
-          <div class="field">
-            <label data-i18n="email">Email</label>
-            <input id="regEmail" type="email" required>
-          </div>
-          <div class="field">
-            <label data-i18n="password">Password</label>
-            <input id="regPassword" type="password" required>
-          </div>
-          <div class="field">
-            <label data-i18n="age">Age</label>
-            <input id="regAge" type="number" min="1" max="120">
-          </div>
-          <div class="field">
-            <label data-i18n="education">Education</label>
-            <select id="regEducation">
-              <option value="high_school" data-i18n="eduHigh">High school</option>
-              <option value="associate" data-i18n="eduAssoc">Associate degree</option>
-              <option value="bachelor" data-i18n="eduBachelor" selected>Bachelor's</option>
-              <option value="master" data-i18n="eduMaster">Master's</option>
-              <option value="phd" data-i18n="eduPhd">PhD</option>
-              <option value="other" data-i18n="eduOther">Other</option>
-            </select>
-          </div>
-          <div class="field">
-            <label data-i18n="major">Major / Field of study</label>
-            <input id="regMajor">
-          </div>
           <div class="field span2">
-            <div class="sliderHead">
-              <label data-i18n="aiLevel">Overall familiarity with AI (0–10)</label>
-              <span id="aiLevelVal" class="sliderVal">5</span>
-            </div>
-            <div class="sliderRow">
-              <input id="regAiLevel" type="range" min="0" max="10" step="1" value="5"
-                     style="background:linear-gradient(to right, var(--accent) 50%, var(--line) 50%);"
-                     oninput="$('aiLevelVal').textContent=this.value; this.style.background=`linear-gradient(to right, var(--accent) ${this.value*10}%, var(--line) ${this.value*10}%)`">
-            </div>
-            <div class="sliderLabels">
-              <span data-i18n="aiLevelMin">Not familiar at all</span>
-              <span data-i18n="aiLevelMax">Extremely familiar</span>
-            </div>
-          </div>
-          <div class="field span2">
-            <div class="sliderHead">
-              <label data-i18n="aiPrincipleLevel">Understanding of how AI works (0–10)</label>
-              <span id="aiPrincipleLevelVal" class="sliderVal">5</span>
-            </div>
-            <div class="sliderRow">
-              <input id="regAiPrincipleLevel" type="range" min="0" max="10" step="1" value="5"
-                     style="background:linear-gradient(to right, var(--accent) 50%, var(--line) 50%);"
-                     oninput="$('aiPrincipleLevelVal').textContent=this.value; this.style.background=`linear-gradient(to right, var(--accent) ${this.value*10}%, var(--line) ${this.value*10}%)`">
-            </div>
-            <div class="sliderLabels">
-              <span data-i18n="aiPrincipleLevelMin">Don't understand at all</span>
-              <span data-i18n="aiPrincipleLevelMax">Understand very well</span>
+            <label>Date of Birth</label>
+            <div class="dobRow">
+              <input id="dmMonth" type="number" min="1" max="12" placeholder="MM" required oninput="autoFillAge()"><span>/</span>
+              <input id="dmDay" type="number" min="1" max="31" placeholder="DD" required oninput="autoFillAge()"><span>/</span>
+              <input id="dmYear" type="number" min="1940" max="2026" placeholder="YYYY" required oninput="autoFillAge()">
+              <span>(Month / Day / Year)</span>
             </div>
           </div>
           <div class="field">
-            <label data-i18n="aiFrequency">How often do you use AI?</label>
-            <select id="regAiFrequency">
-              <option value="never" data-i18n="freqNever">Never</option>
-              <option value="rarely" data-i18n="freqRarely">Rarely (a few times a year)</option>
-              <option value="monthly" data-i18n="freqMonthly">A few times a month</option>
-              <option value="weekly" data-i18n="freqWeekly" selected>A few times a week</option>
-              <option value="daily" data-i18n="freqDaily">Daily or almost daily</option>
-            </select>
-          </div>
-          <div class="field span2">
-            <label data-i18n="aiPurpose">What do you mainly use AI for?</label>
-            <div class="checkGrid" id="regAiPurpose">
-              <label class="checkOpt"><input type="checkbox" value="study" checked>
-                <span data-i18n="purposeStudy">Study / learning</span></label>
-              <label class="checkOpt"><input type="checkbox" value="work">
-                <span data-i18n="purposeWork">Work / productivity</span></label>
-              <label class="checkOpt"><input type="checkbox" value="creative">
-                <span data-i18n="purposeCreative">Creative writing / art</span></label>
-              <label class="checkOpt"><input type="checkbox" value="coding">
-                <span data-i18n="purposeCoding">Programming / coding</span></label>
-              <label class="checkOpt"><input type="checkbox" value="daily_life">
-                <span data-i18n="purposeDailyLife">Daily life / entertainment</span></label>
-              <label class="checkOpt"><input type="checkbox" value="other" onchange="onPurposeOtherToggle()">
-                <span data-i18n="purposeOther">Other</span></label>
-              <label class="checkOpt"><input type="checkbox" value="none">
-                <span data-i18n="purposeNone">I don't use AI</span></label>
+            <label>Age</label>
+            <div class="unitRow">
+              <input id="dmAge" type="number" min="15" max="120" required oninput="AGE_MANUAL = this.value !== ''">
+              <span>Years Old</span>
             </div>
-            <input id="regAiPurposeOther" class="otherInput" hidden maxlength="255"
-                   data-i18n-ph="purposeOtherPh" placeholder="Please specify…">
           </div>
-          <div class="field span2">
-            <label data-i18n="aiUsedForLearning">Have you ever used AI to help with your studies?</label>
+          <div class="field">
+            <label>Gender</label>
             <div class="toggleRow">
-              <label class="radioOpt"><input type="radio" name="aiUsedForLearning" value="yes" checked>
-                <span data-i18n="yes">Yes</span></label>
-              <label class="radioOpt"><input type="radio" name="aiUsedForLearning" value="no">
-                <span data-i18n="no">No</span></label>
+              <label class="radioOpt"><input type="radio" name="dmGender" value="male" required>
+                <span>Male</span></label>
+              <label class="radioOpt"><input type="radio" name="dmGender" value="female">
+                <span>Female</span></label>
+            </div>
+          </div>
+          <div class="field span2">
+            <label>Using the scale below, how many years of formal education did you complete? (Years)</label>
+            <select id="dmEdu" required>
+              <option value="" disabled selected>Please select…</option>
+              <option value="1-7.5">Fewer than 8 years (1-7.5)</option>
+              <option value="8">Completed 8th grade (8)</option>
+              <option value="9-11.5">Some high school (9-11.5)</option>
+              <option value="12">Graduated high school (12)</option>
+              <option value="12.5-15.5">Some college (12.5-15.5)</option>
+              <option value="16">Graduated college (16)</option>
+              <option value="18">Master's degree (18)</option>
+              <option value="20">Doctoral or medical degree (20)</option>
+            </select>
+          </div>
+          <div class="field span2">
+            <label>Are you a native speaker of English?</label>
+            <div class="toggleRow">
+              <label class="radioOpt"><input type="radio" name="dmNative" value="yes" required onchange="onNativeToggle()">
+                <span>Yes</span></label>
+              <label class="radioOpt"><input type="radio" name="dmNative" value="no" onchange="onNativeToggle()">
+                <span>No</span></label>
+            </div>
+            <div class="subQuestions" id="dmNativeSub" hidden>
+              <div class="field">
+                <label>If not — what is your first language?</label>
+                <input id="dmFirstLang" maxlength="64">
+              </div>
+              <div class="field">
+                <label>At what age did you begin to acquire English?</label>
+                <div class="unitRow">
+                  <input id="dmEnglishAge" type="number" min="0" max="120">
+                  <span>Years Old</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="field span2">
+            <label>Are you Hispanic or Latino?</label>
+            <div class="toggleRow">
+              <label class="radioOpt"><input type="radio" name="dmHispanic" value="yes" required>
+                <span>Yes</span></label>
+              <label class="radioOpt"><input type="radio" name="dmHispanic" value="no">
+                <span>No</span></label>
+            </div>
+          </div>
+          <div class="field span2">
+            <label>Please check one of the following ethnic or racial categories that best describe you.</label>
+            <div class="radioList">
+              <label class="radioOpt"><input type="radio" name="dmRace" value="native_american" required>
+                <span>Native American/Alaska Native</span></label>
+              <label class="radioOpt"><input type="radio" name="dmRace" value="asian">
+                <span>Asian</span></label>
+              <label class="radioOpt"><input type="radio" name="dmRace" value="pacific_islander">
+                <span>Native Hawaiian or Other Pacific Islander</span></label>
+              <label class="radioOpt"><input type="radio" name="dmRace" value="black">
+                <span>Black or African American</span></label>
+              <label class="radioOpt"><input type="radio" name="dmRace" value="white">
+                <span>White or Caucasian</span></label>
+              <label class="radioOpt"><input type="radio" name="dmRace" value="multiple">
+                <span>Multiple categories</span></label>
             </div>
           </div>
         </div>
-        <button class="primary" type="submit" data-i18n="registerBtn">Register</button>
-        <div class="switchLine">
-          <span data-i18n="haveAccount">Already have an account?</span>
-          <a onclick="showView('login')" data-i18n="loginLink">Log in</a>
+        <button class="primary" type="submit">Submit and continue</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 背景调查页(AI Literacy Scale):人口学信息之后填写,提交时建档 -->
+  <div class="panel" id="background" style="display:none">
+    <div class="center">
+      <form class="authForm wide" onsubmit="return submitBackground(event)">
+        <h2>Background Information</h2>
+        <p class="sub">Please indicate how much you agree with each statement,
+           from 1 (strongly disagree) to 7 (strongly agree).</p>
+        <div class="errBox" id="bgErr"></div>
+        <section class="surveySection" aria-labelledby="academicTitle">
+          <h3 id="academicTitle">Academic Background</h3>
+          <div class="formGrid">
+            <div class="field span2">
+              <label>Major</label>
+              <input id="bgMajor" maxlength="100" required>
+            </div>
+            <div class="field span2">
+              <label>Second Major (if any)</label>
+              <input id="bgSecondMajor" maxlength="100">
+            </div>
+            <div class="field span2">
+              <label>Minor (if any)</label>
+              <input id="bgMinor" maxlength="100">
+            </div>
+          </div>
+        </section>
+        <div class="likertHead">
+          <span>1 = Strongly disagree</span>
+          <span>7 = Strongly agree</span>
         </div>
+        <div id="ailsItems"></div>
+        <section class="surveySection" aria-labelledby="llmUseTitle">
+          <h3 id="llmUseTitle">LLM Use and Learning</h3>
+          <p class="sectionSub">In the questions below, <strong>LLM</strong> means a large language model, such as ChatGPT, Claude, Gemini, or Copilot.</p>
+          <div class="field">
+            <label>How often do you use LLMs?</label>
+            <select id="llmUseFrequency" required onchange="onLlmUseFrequencyChange()">
+              <option value="" disabled selected>Please select…</option>
+              <option value="never">Never</option>
+              <option value="monthly_several_times">Several times a month</option>
+              <option value="weekly_several_times">Several times a week</option>
+              <option value="almost_daily">Almost every day</option>
+            </select>
+          </div>
+          <div id="llmPurposeQuestion" class="field" hidden>
+            <label>What do you use LLMs for? Select all that apply.</label>
+            <div class="choiceList">
+              <label class="radioOpt"><input type="checkbox" name="llmPurpose" value="work">Work-related tasks</label>
+              <label class="radioOpt"><input type="checkbox" name="llmPurpose" value="coursework">Coursework or assignments</label>
+              <label class="radioOpt"><input type="checkbox" name="llmPurpose" value="personal_learning">Learning outside formal coursework</label>
+              <label class="radioOpt"><input type="checkbox" name="llmPurpose" value="writing">Writing or editing</label>
+              <label class="radioOpt"><input type="checkbox" name="llmPurpose" value="programming">Programming or technical help</label>
+              <label class="radioOpt"><input type="checkbox" name="llmPurpose" value="brainstorming">Brainstorming or creative work</label>
+              <label class="radioOpt"><input type="checkbox" name="llmPurpose" value="information">Finding or understanding information</label>
+              <label class="radioOpt"><input type="checkbox" name="llmPurpose" value="personal_tasks">Everyday personal tasks</label>
+              <label class="radioOpt"><input type="checkbox" name="llmPurpose" value="other">Other</label>
+            </div>
+          </div>
+          <div class="field" id="llmUseOtherField" hidden>
+            <label>Please describe the other purpose for which you use LLMs.</label>
+            <input id="llmUseOther" maxlength="255">
+          </div>
+          <div class="field">
+            <label>How often do you use LLMs to support your learning?</label>
+            <select id="llmLearningFrequency" required onchange="onLlmLearningFrequencyChange()">
+              <option value="" disabled selected>Please select…</option>
+              <option value="never">Never</option>
+              <option value="monthly_several_times">Several times a month</option>
+              <option value="weekly_several_times">Several times a week</option>
+              <option value="almost_daily">Almost every day</option>
+            </select>
+          </div>
+          <div id="llmLearningQuestions" class="conditionalQuestions" hidden>
+            <div class="field">
+              <label>How have you used LLMs for learning? Select all that apply.</label>
+              <div class="choiceList">
+                <label class="radioOpt"><input type="checkbox" name="llmLearningMethod" value="explanations">Request explanations of concepts</label>
+                <label class="radioOpt"><input type="checkbox" name="llmLearningMethod" value="examples">Request examples or analogies</label>
+                <label class="radioOpt"><input type="checkbox" name="llmLearningMethod" value="practice">Generate practice questions or quizzes</label>
+                <label class="radioOpt"><input type="checkbox" name="llmLearningMethod" value="feedback">Receive feedback on my work or reasoning</label>
+                <label class="radioOpt"><input type="checkbox" name="llmLearningMethod" value="summaries">Summarize or organize learning materials</label>
+                <label class="radioOpt"><input type="checkbox" name="llmLearningMethod" value="planning">Plan study activities or learning goals</label>
+                <label class="radioOpt"><input type="checkbox" name="llmLearningMethod" value="translation">Translate or clarify language</label>
+                <label class="radioOpt"><input type="checkbox" name="llmLearningMethod" value="other">Other</label>
+              </div>
+            </div>
+            <div class="field" id="llmLearningOtherField" hidden>
+              <label>Please describe the other way you use LLMs for learning.</label>
+              <input id="llmLearningOther" maxlength="255">
+            </div>
+          </div>
+        </section>
+        <button class="primary" type="submit">Submit and continue</button>
       </form>
     </div>
   </div>
 
   <!-- 开始页 -->
   <div class="panel" id="start" style="display:none">
-    <div class="center">
-      <h2 data-i18n="startTitle">Welcome to the experiment</h2>
-      <p data-i18n="startSub">You will first read a short article, then go through 3 discussion phases<br>
-         with your learning partner, each focusing on a different question.</p>
-      <button onclick="startSession()" data-i18n="startBtn">Start</button>
+    <div class="center" style="max-width:900px; width:100%;">
+      <div style="background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:32px 36px; text-align:left; box-shadow:0 1px 3px rgba(0,0,0,.04);">
+        <h2 id="startTitle" style="margin-bottom:18px; text-align:center;">Welcome {name}</h2>
+        <p id="startWelcome" style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          Thank you for participating in our study!
+        </p>
+        <p style="margin:0 0 16px; font-size:16px; line-height:1.8; color:var(--ink);">
+          In this study, you will learn about <strong>two topics</strong>:
+        </p>
+        <ol style="margin:0 0 18px 28px; padding:0; font-size:16px; line-height:1.8; color:var(--ink);">
+          <li>Whether Artificial General Intelligence (AGI) has already been achieved.</li>
+          <li>How Large Language Models (LLMs) may affect human cognition and learning.</li>
+        </ol>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          For each topic, you will complete the following activities.
+        </p>
+        <h3 style="margin:18px 0 10px; font-size:18px;">1. Read</h3>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          You will first read a short passage introducing key ideas and arguments related to the topic.
+        </p>
+        <h3 style="margin:18px 0 10px; font-size:18px;">2. Recall</h3>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          After reading, you will be asked to explain what you learned <strong>in your own words and to the best of your ability</strong>.
+        </p>
+        <h3 style="margin:18px 0 10px; font-size:18px;">3. Discuss</h3>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          You will then have <strong>three rounds of discussion</strong> with our AI learning partner. During the discussion, you can explain your ideas, consider different perspectives, and respond to questions or arguments.
+        </p>
+        <h3 style="margin:18px 0 10px; font-size:18px;">4. Search</h3>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          After each discussion round, you can interact with our <strong>conversational search agent</strong> to explore anything you would like to learn more about or verify.
+        </p>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          For example, you may use it to clarify a concept, check a claim, find supporting evidence, or explore a question that came up during the discussion.
+        </p>
+        <h3 style="margin:18px 0 10px; font-size:18px;">5. Answer Questions</h3>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          After all three discussion rounds, you will answer several questions about the topic. These questions will help us assess your understanding of what you have learned.
+        </p>
+        <h3 style="margin:18px 0 10px; font-size:18px;">6. Create Concept Maps</h3>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          Before and after the discussion, you will also create a <strong>concept map with causal relationships</strong>.
+        </p>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          A concept map shows the important concepts in your understanding of a topic and how they are connected. In this study, we are especially interested in <strong>causal links</strong>—whether you believe one concept influences another.
+        </p>
+        <ul style="margin:0 0 18px 28px; padding:0; font-size:16px; line-height:1.8; color:var(--ink);">
+          <li>Each <strong>node</strong> represents a concept.</li>
+          <li>Each <strong>arrow</strong> represents a causal relationship.</li>
+          <li>The direction of the arrow shows which concept influences the other.</li>
+        </ul>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          For example, if you believe that greater reliance on AI reduces mental effort, and reduced mental effort affects learning, you might draw:
+        </p>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink); text-align:center; font-weight:600;">
+          <strong>Greater AI Reliance → Reduced Mental Effort → Changes in Learning</strong>
+        </p>
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:var(--ink);">
+          There is no single correct map. Please include the concepts and relationships that best represent <strong>your own understanding at that moment</strong>.
+        </p>
+        <p style="margin:0; font-size:16px; line-height:1.8; color:var(--ink);">
+          By comparing your maps before and after the discussion, we hope to understand how your knowledge and understanding of the relationships between concepts may change during the study.
+        </p>
+        <div style="text-align:center; margin-top:28px;">
+          <button onclick="startSession()" style="display:inline-block;">Start</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -365,261 +548,193 @@
   <div class="panel" id="reading" style="display:none">
     <div id="goal" style="font-size:14px;color:var(--accent);background:var(--accent-soft);
          border-radius:var(--radius);padding:10px 16px;margin-bottom:14px;"></div>
-    <div id="transNote" class="transNote" hidden>
-      <span class="transBadge" data-i18n="aiTranslated">AI translation</span>
-      <span data-i18n="aiTranslatedNote">This article was machine-translated. The English original is authoritative.</span>
-    </div>
     <div id="article"></div>
-    <button id="doneBtn" onclick="doneReading()" data-i18n="doneReading">I'm done reading — start the discussion</button>
+    <button id="doneBtn" onclick="doneReading()">Please inform the researcher when you are ready to start the discussion</button>
   </div>
 
-  <!-- 聊天页 -->
+  <!-- 讨论 + 搜索合并页:左讨论右搜索,同屏显示;非当前环节的一栏只读(可滚动回看,禁止发送) -->
   <div class="panel" id="chat">
-    <div id="msgs"></div>
-    <div class="inputRow">
-      <textarea id="input" data-i18n-ph="inputPh" placeholder="Type your thoughts… (Enter to send, Shift+Enter for a new line)"></textarea>
-      <button id="sendBtn" onclick="send()" data-i18n="sendBtn">Send</button>
+    <div class="pane" id="chatPane">
+      <div class="paneHead"><span class="paneTitle">Discussion</span></div>
+      <div id="msgs"></div>
+      <div class="inputRow">
+        <textarea id="input" placeholder="Type your thoughts… (Enter to send, Shift+Enter for a new line)"></textarea>
+        <button id="sendBtn" onclick="send()">Send</button>
+      </div>
     </div>
-  </div>
-
-  <!-- 搜索页(阶段间自主搜索环节) -->
-  <div class="panel" id="search" style="display:none">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
-      <button id="endSearchBtn" onclick="endSearch()" data-i18n="endSearch">End search — back to discussion</button>
-    </div>
-    <div id="searchMsgs"></div>
-    <div class="inputRow">
-      <textarea id="searchInput" data-i18n-ph="searchInputPh" placeholder="Ask anything you want to look up… (Enter to send)"></textarea>
-      <button id="searchSendBtn" onclick="sendSearch()" data-i18n="sendBtn">Send</button>
-    </div>
-  </div>
-
-  <!-- 因果图评分页(搜索环节结束后) -->
-  <div class="panel" id="causal" style="display:none">
-    <div class="causalCard">
-      <h2 data-i18n="causalTitle">Here is how I think you currently see it</h2>
-      <p class="causalDesc" data-i18n="causalDesc">Based on our discussion and your searches, this diagram is my guess at your current mental model. Each node is a key concept; each arrow means "this influences that".</p>
-      <div id="causalSvgWrap"></div>
-      <div class="causalRate">
-        <div class="sliderHead">
-          <label data-i18n="causalRateLabel">How accurately does this diagram reflect your current thinking? (0–10)</label>
-          <span class="sliderVal" id="causalScoreVal">5</span>
-        </div>
-        <div class="sliderRow">
-          <input type="range" id="causalScore" min="0" max="10" step="1" value="5"
-                 oninput="onCausalSlider()">
-        </div>
-        <div class="sliderLabels">
-          <span data-i18n="causalRateMin">Not my thinking at all</span>
-          <span data-i18n="causalRateMax">Exactly my thinking</span>
-        </div>
-        <button id="causalSubmitBtn" onclick="submitCausalRating()" data-i18n="causalSubmit">Submit rating and continue</button>
+    <div class="pane" id="searchPane">
+      <div class="paneHead">
+        <span class="paneTitle">Search</span>
+        <button id="endSearchBtn" onclick="endSearch()">End search — back to discussion</button>
+      </div>
+      <div id="searchMsgs"></div>
+      <div class="inputRow">
+        <textarea id="searchInput" placeholder="Ask anything you want to look up… (Enter to send)"></textarea>
+        <button id="searchSendBtn" onclick="sendSearch()">Send</button>
       </div>
     </div>
   </div>
 
-  <!-- 结束页 -->
+  <!-- 休息页(主题 1 全部讨论与搜索结束后) -->
+  <div class="panel" id="rest" style="display:none">
+    <div class="center">
+      <div class="finishCard">
+        <div class="finishMark">☕</div>
+        <h2>Great work — time for a short break!</h2>
+        <p>You have finished all three discussion rounds for the first topic.
+           Feel free to stand up, stretch, or rest your eyes for a moment.
+           When you are ready, click the button below to move on to the second topic.</p>
+        <button id="restBtn" onclick="endRest()">I'm ready — continue to Topic 2</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 考试页(主题 2 全部讨论与搜索结束后) -->
+  <div class="panel" id="exam" style="display:none">
+    <div class="examCard">
+      <h2>Final Questions</h2>
+      <p class="examSub">Please answer the following questions in your own words, based on what you have learned in this study. There is no time limit.</p>
+      <div id="examItems"></div>
+      <button id="examSubmitBtn" onclick="submitExam()">Submit answers and finish</button>
+    </div>
+  </div>
+
+  <!-- 结束页:感谢参与并道别 -->
   <div class="panel" id="finish" style="display:none">
     <div class="center">
-      <h2 data-i18n="finishTitle">The experiment is complete</h2>
-      <p data-i18n="finishSub">Thank you for participating! Please notify the researcher.</p>
+      <div class="finishCard">
+        <div class="finishMark">✓</div>
+        <h2 id="finishTitle">All done — thank you!</h2>
+        <p>You have completed all three discussion phases of this study.
+           Your conversations and reflections are a real contribution to our research on how
+           people learn with AI — we're grateful for the time and thought you put in.</p>
+        <p>Please let the researcher know you have finished. You may now close this page.</p>
+        <p class="finishBye">Goodbye, and all the best with your learning!</p>
+      </div>
     </div>
   </div>
 </main>
 
 <script>
-/* ---------- i18n ---------- */
-const I18N = {
-  en: {
-    appTitle:"Learning Partner", logout:"Log out",
-    loginTitle:"Welcome back", loginSub:"Log in to continue the experiment",
-    username:"Username", password:"Password", loginBtn:"Log in",
-    noAccount:"No account yet?", registerLink:"Register",
-    // 知情同意书全文,逐字取自 consent.txt(IRB 批准文本,请勿随意改写)
-    consentTitle:"Consent Document",
-    consentSub:"Facilitate Belief Updating with Human-AI Teaming: Knowledge Acquisition with Information Exchange and Seeking",
-    consentBody:`
-      <div class="consentMeta">
-        <p><strong>Principal Investigator Name and Title:</strong> Jessie Chin, Associate Professor</p>
-        <p><strong>Department and Institution:</strong> School of Information Sciences, University of Illinois Urbana-Champaign</p>
-        <p><strong>Contact Information:</strong> <a href="mailto:chin5@illinois.edu">chin5@illinois.edu</a></p>
-      </div>
-      <h3>BACKGROUND</h3>
-      <p>You are being asked to participate in a research study at the University of Illinois at Urbana-Champaign. Before you decide, it is important for you to understand why the research is being done and what it will involve. Please take time to read the following information carefully. Ask us if there is anything that is not clear or if you would like more information. Take time to decide whether you want to volunteer to take part in this study. Your participation in this research is voluntary. If you decide to participate, you are free to withdraw at any time. The purpose of this study is to develop ways to better support people in active learning by interacting with an AI system. Participation in this study will help us identify and refine human-AI interaction strategies that promote deeper conceptual understanding, provide empirical evidence to inform the design of educational AI systems, and advance the development of AI learning tools that move beyond passive information delivery toward actively facilitating conceptual change, ultimately benefiting the broader population of self-directed learners.</p>
-      <h3>STUDY PROCEDURE</h3>
-      <p>The study procedures are (1) completing pre-study questionnaires about demographic information, prior knowledge, and learning-related beliefs, (2) reading an assigned article on a target concept and drawing an initial concept map, (3) engaging in structured discussion with the AI Study Peer and self-directed search, and (4) completing post-study questionnaires assessing learning outcomes and overall experience. The entire study will be conducted via Zoom, with the researcher present as a silent observer, and will last approximately 60 minutes.</p>
-      <h3>RISKS</h3>
-      <p>The risks associated with this study are minimal. Because we will collect your contact information to schedule the Zoom appointment, there is a risk of loss of confidentiality of participating in the study. To protect your privacy, researchers will deidentify any study-related data s and store them confidentially. Only authorized research personnel will have access to your data. If you feel uncomfortable or upset at any time, you may stop participating and leave the study at any time.</p>
-      <h3>BENEFITS</h3>
-      <p>We cannot guarantee any direct benefits from participating in this study. However, potential benefits may include the opportunity to practice explaining complex topics, to strengthen your understanding of concepts that often underlie common misunderstandings, and to reflect more deeply on how knowledge and beliefs are formed.</p>
-      <h3>HOW WILL THE RESEARCHERS PROTECT MY INFORMATION?</h3>
-      <p>We will not collect any identifiable information from you, which is not needed in our study. We will store the collected in a secure, UIUC-approved online location: UIUC Box.</p>
-      <h3>WHO WILL HAVE ACCESS TO THE INFORMATION COLLECTED DURING THIS STUDY?</h3>
-      <p>Efforts will be made to limit the use and disclosure of your personal information, including research study records, to people who need to review this information. We cannot promise complete secrecy.</p>
-      <p>There are reasons why information about you may be used or seen by other people beyond the research team during or after this study. Examples include:</p>
-      <ul>
-        <li>University officials, government officials, study funders, auditors, and the Institutional Review Board may need access to the study information to make sure the study is done safely and appropriately.</li>
-      </ul>
-      <h3>HOW MIGHT THE INFORMATION COLLECTED IN THIS STUDY BE SHARED IN THE FUTURE?</h3>
-      <p>We will keep the information we collect about you during this research study for study recordkeeping. De-identified data from this study may be shared with the research community, with journals in which study results are published.</p>
-      <h3>PERSON TO CONTACT</h3>
-      <p>If you have any questions, concerns about this study, or if you believe you have experienced harm as a result of your participation, you may contact Dr. Chin at <a href="mailto:chin5@illinois.edu">chin5@illinois.edu</a>.</p>
-      <p><strong>Institutional Review Board:</strong> If you have any questions about your rights as a research subject, including concerns, complaints, or to offer input, you may call the Office for the Protection of Research Subjects (OPRS) at 217-333-2670 or e-mail OPRS at <a href="mailto:irb@illinois.edu">irb@illinois.edu</a>. If you would like to complete a brief survey to provide OPRS feedback about your experiences as a research participant, please follow the link here or through a link on the OPRS website: <a href="https://oprs.research.illinois.edu/" target="_blank" rel="noopener">https://oprs.research.illinois.edu/</a>. You will have the option to provide feedback or concerns anonymously or you may provide your name and contact information for follow-up purposes.</p>
-      <h3>VOLUNTARY PARTICIPATION</h3>
-      <p>Research studies include only people who choose to take part. You can tell us that you don't want to be in this study. You can start the study and then choose to stop the study later. This will not affect your relationship with the investigator.</p>
-      <h3>COSTS AND COMPENSATION TO PARTICIPANTS</h3>
-      <p>The compensation is $15 for a study that takes approximately 60 minutes.</p>`,
-    consentAgree:"I confirm I have read the information in this consent form and have had the opportunity to ask questions. I will be given a signed copy of this consent form. I voluntarily agree to take part in this study.",
-    consentContinue:"Agree and continue",
-    consentDecline:"Decline and go back",
-    registerTitle:"Create an account", registerSub:"Please fill in the details below",
-    email:"Email", age:"Age", education:"Education", major:"Major / Field of study",
-    aiLevel:"Overall familiarity with AI (0–10)",
-    aiLevelMin:"Not familiar at all", aiLevelMax:"Extremely familiar",
-    aiPrincipleLevel:"Understanding of how AI works (0–10)",
-    aiPrincipleLevelMin:"Don't understand at all", aiPrincipleLevelMax:"Understand very well",
-    eduHigh:"High school", eduAssoc:"Associate degree", eduBachelor:"Bachelor's",
-    eduMaster:"Master's", eduPhd:"PhD", eduOther:"Other",
-    aiFrequency:"How often do you use AI?",
-    freqNever:"Never", freqRarely:"Rarely (a few times a year)", freqMonthly:"A few times a month",
-    freqWeekly:"A few times a week", freqDaily:"Daily or almost daily",
-    aiPurpose:"What do you mainly use AI for? (select all that apply)",
-    purposeStudy:"Study / learning", purposeWork:"Work / productivity",
-    purposeCreative:"Creative writing / art", purposeCoding:"Programming / coding",
-    purposeDailyLife:"Daily life / entertainment", purposeOther:"Other", purposeNone:"I don't use AI",
-    purposeOtherPh:"Please specify…", purposeOtherRequired:"Please specify your other use of AI.",
-    aiUsedForLearning:"Have you ever used AI to help with your studies?",
-    yes:"Yes", no:"No",
-    registerBtn:"Register", haveAccount:"Already have an account?", loginLink:"Log in",
-    startTitle:"Welcome to the experiment",
-    startSub:"You will first read a short article, then go through 3 discussion phases<br>with your learning partner, each focusing on a different question.",
-    startBtn:"Start",
-    doneReading:"I'm done reading — start the discussion",
-    inputPh:"Type your thoughts… (Enter to send, Shift+Enter for a new line)",
-    sendBtn:"Send",
-    finishTitle:"The experiment is complete",
-    finishSub:"Thank you for participating! Please notify the researcher.",
-    phaseLabel:"Phase", topicLabel:"Topic:", goalLabel:"Learning goal:",
-    state_reading:"Reading", state_onboarding:"Onboarding",
-    state_debate:"Discussion", state_summary:"Summary", state_search:"Free search",
-    endSearch:"End search — back to discussion",
-    searchInputPh:"Ask anything you want to look up… (Enter to send)",
-    searching:"Searching authoritative sources…",
-    sourcesLabel:"Sources:",
-    causalTitle:"Here is how I think you currently see it",
-    causalDesc:"Based on our discussion and your searches, this diagram is my guess at your current mental model. Each node is a key concept; each arrow means \"this influences that\".",
-    causalRateLabel:"How accurately does this diagram reflect your current thinking? (0–10)",
-    causalRateMin:"Not my thinking at all", causalRateMax:"Exactly my thinking",
-    causalSubmit:"Submit rating and continue",
-    state_causal:"Your concept map",
-    searchIntro:"Nice work finishing that discussion! Before the next one starts, you now have some free time to look things up. I'm a search assistant: ask me anything you're curious about, and I'll search authoritative sources on the web and report back what they say, with references. You decide what to explore — anything that came up in the discussion, anything you doubted, anything you want to verify. When you feel ready, click the button above to return to your learning partner. So — what would you like to look up first?",
-    aiTranslated:"AI translation",
-    aiTranslatedNote:"This article was machine-translated. The English original is authoritative.",
-    thinking:"Your learning partner is thinking…",
-    phaseEnter:"— Entering Phase {n} discussion —",
-    somethingWrong:"Something went wrong: ",
-    onboardingPrompt:"Hi! Great job finishing the article. Before we start, let me quickly introduce how this study works: it has three discussion phases, and each phase focuses on one question about AI and intelligence. You and I have read different articles on the topic, so we may well see things differently — that's exactly the point of discussing. Throughout our conversation, please speak up actively, share your own opinions boldly, and feel free to question or push back on anything I say. Don't be shy — there are no wrong answers here. Are you ready to start the first discussion? Just let me know!",
-  },
-  zh: {
-    appTitle:"学习伙伴", logout:"退出登录",
-    loginTitle:"欢迎回来", loginSub:"登录以继续实验",
-    username:"用户名", password:"密码", loginBtn:"登录",
-    noAccount:"还没有账号？", registerLink:"注册",
-    // 知情同意书正文/标题/同意声明不在此翻译:t() 会回退到 en,
-    // 始终呈现 IRB 批准的英文原文。仅按钮等界面文字本地化。
-    consentContinue:"同意并继续",
-    consentDecline:"不同意，返回",
-    registerTitle:"创建账号", registerSub:"请填写以下信息",
-    email:"邮箱", age:"年龄", education:"当前学历", major:"专业 / 研究方向",
-    aiLevel:"你对人工智能的整体熟悉程度（0-10）",
-    aiLevelMin:"完全不熟悉", aiLevelMax:"非常熟悉",
-    aiPrincipleLevel:"你对人工智能原理的了解程度（0-10）",
-    aiPrincipleLevelMin:"完全不了解", aiPrincipleLevelMax:"非常了解",
-    eduHigh:"高中", eduAssoc:"大专", eduBachelor:"本科",
-    eduMaster:"硕士", eduPhd:"博士", eduOther:"其他",
-    aiFrequency:"你使用人工智能的频率",
-    freqNever:"从不使用", freqRarely:"很少使用（一年几次）", freqMonthly:"每月几次",
-    freqWeekly:"每周几次", freqDaily:"几乎每天使用",
-    aiPurpose:"你使用人工智能的主要用途（可多选）",
-    purposeStudy:"学习", purposeWork:"工作 / 提升效率",
-    purposeCreative:"创意写作 / 艺术创作", purposeCoding:"编程 / 写代码",
-    purposeDailyLife:"日常生活 / 娱乐", purposeOther:"其他", purposeNone:"我不使用人工智能",
-    purposeOtherPh:"请具体说明…", purposeOtherRequired:"请具体说明你使用人工智能的其他用途。",
-    aiUsedForLearning:"你是否曾使用人工智能来帮助学习？",
-    yes:"是", no:"否",
-    registerBtn:"注册", haveAccount:"已经有账号了？", loginLink:"登录",
-    startTitle:"欢迎参加本实验",
-    startSub:"你将先阅读一篇短文，然后与学习伙伴进行 3 个阶段的讨论，<br>每个阶段聚焦一个不同的问题。",
-    startBtn:"开始",
-    doneReading:"我已读完 — 开始讨论",
-    inputPh:"输入你的想法…（回车发送，Shift+回车换行）",
-    sendBtn:"发送",
-    finishTitle:"实验已完成",
-    finishSub:"感谢你的参与！请告知研究人员。",
-    phaseLabel:"阶段", topicLabel:"主题：", goalLabel:"学习目标：",
-    state_reading:"阅读", state_onboarding:"引导",
-    state_debate:"讨论", state_summary:"总结", state_search:"自主搜索",
-    endSearch:"结束搜索 — 返回讨论",
-    searchInputPh:"输入你想查找的任何问题…（回车发送）",
-    searching:"正在检索权威资料…",
-    sourcesLabel:"资料来源：",
-    causalTitle:"我猜你现在是这样理解这个问题的",
-    causalDesc:"基于我们的讨论和你的搜索记录，这张图是 AI 对你当前想法的推测。每个节点是一个关键概念；每条箭头表示\u201c前者影响后者\u201d。",
-    causalRateLabel:"这张图在多大程度上准确反映了你当前的想法？（0-10）",
-    causalRateMin:"完全不是我的想法", causalRateMax:"完全就是我的想法",
-    causalSubmit:"提交评分并继续",
-    state_causal:"你的概念图",
-    searchIntro:"刚才的讨论辛苦啦！在进入下一段讨论之前，你现在有一段自由查资料的时间。我是搜索助手：你可以问我任何想了解的问题，我会在网上检索权威资料，并附上来源告诉你它们怎么说。查什么完全由你决定——讨论中出现过的内容、你存疑的观点、想核实的说法都可以。准备好之后，点击上方按钮即可回到你的学习伙伴。那么——你想先查点什么？",
-    aiTranslated:"AI 翻译",
-    aiTranslatedNote:"本文由 AI 翻译，仅供参考；如有歧义请以英文原文为准。",
-    thinking:"学习伙伴正在思考…",
-    phaseEnter:"— 进入第 {n} 阶段讨论 —",
-    somethingWrong:"出现错误：",
-    onboardingPrompt:"你好！文章读完啦，辛苦了。开始之前，我先简单介绍一下这个研究：整个学习共有三个讨论阶段，每个阶段聚焦一个关于 AI 与智能的问题。你和我读到的文章观点并不相同，所以我们的看法很可能有分歧——这正是讨论的意义所在。在接下来的对话中，希望你能积极发言、大胆表达自己的观点；对我说的任何内容都可以质疑或反驳，有疑问尽管提出来，不用害羞——这里没有标准答案。准备好开始第一个讨论了吗？告诉我一声就行！",
-  }
-};
-let LANG = localStorage.getItem('lpLang') || 'en';
-function t(key){ return (I18N[LANG][key] ?? I18N.en[key] ?? key); }
-function applyI18n(){
-  document.documentElement.lang = (LANG==='zh' ? 'zh-CN' : 'en');
-  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.innerHTML = t(el.dataset.i18n); });
-  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder = t(el.dataset.i18nPh); });
-  // 高亮当前语言所在的那一段
-  $('langSwitch').querySelectorAll('button').forEach(b=>{
-    b.classList.toggle('active', b.dataset.lang===LANG);
-  });
-  renderHeader();
+/* ---------- Runtime UI messages ---------- */
+const UI_TEXT = {
+  "consentBody": "\n      <div class=\"consentMeta\">\n        <p><strong>Principal Investigator Name and Title:</strong> Jessie Chin, Associate Professor</p>\n        <p><strong>Department and Institution:</strong> School of Information Sciences, University of Illinois Urbana-Champaign</p>\n        <p><strong>Contact Information:</strong> <a href=\"mailto:chin5@illinois.edu\">chin5@illinois.edu</a></p>\n      </div>\n      <h3>BACKGROUND</h3>\n      <p>You are being asked to participate in a research study at the University of Illinois at Urbana-Champaign. Before you decide, it is important for you to understand why the research is being done and what it will involve. Please take time to read the following information carefully. Ask us if there is anything that is not clear or if you would like more information. Take time to decide whether you want to volunteer to take part in this study. Your participation in this research is voluntary. If you decide to participate, you are free to withdraw at any time. The purpose of this study is to develop ways to better support people in active learning by interacting with an AI system. Participation in this study will help us identify and refine human-AI interaction strategies that promote deeper conceptual understanding, provide empirical evidence to inform the design of educational AI systems, and advance the development of AI learning tools that move beyond passive information delivery toward actively facilitating conceptual change, ultimately benefiting the broader population of self-directed learners.</p>\n      <h3>STUDY PROCEDURE</h3>\n      <p>The study procedures are (1) completing pre-study questionnaires about demographic information, prior knowledge, and learning-related beliefs, (2) reading an assigned article on a target concept and drawing an initial concept map, (3) engaging in structured discussion with the AI Study Peer and self-directed search, and (4) completing post-study questionnaires assessing learning outcomes and overall experience. The entire study will be conducted via Zoom, with the researcher present as a silent observer, and will last approximately 60 minutes.</p>\n      <h3>RISKS</h3>\n      <p>The risks associated with this study are minimal. Because we will collect your contact information to schedule the Zoom appointment, there is a risk of loss of confidentiality of participating in the study. To protect your privacy, researchers will deidentify any study-related data s and store them confidentially. Only authorized research personnel will have access to your data. If you feel uncomfortable or upset at any time, you may stop participating and leave the study at any time.</p>\n      <h3>BENEFITS</h3>\n      <p>We cannot guarantee any direct benefits from participating in this study. However, potential benefits may include the opportunity to practice explaining complex topics, to strengthen your understanding of concepts that often underlie common misunderstandings, and to reflect more deeply on how knowledge and beliefs are formed.</p>\n      <h3>HOW WILL THE RESEARCHERS PROTECT MY INFORMATION?</h3>\n      <p>We will not collect any identifiable information from you, which is not needed in our study. We will store the collected in a secure, UIUC-approved online location: UIUC Box.</p>\n      <h3>WHO WILL HAVE ACCESS TO THE INFORMATION COLLECTED DURING THIS STUDY?</h3>\n      <p>Efforts will be made to limit the use and disclosure of your personal information, including research study records, to people who need to review this information. We cannot promise complete secrecy.</p>\n      <p>There are reasons why information about you may be used or seen by other people beyond the research team during or after this study. Examples include:</p>\n      <ul>\n        <li>University officials, government officials, study funders, auditors, and the Institutional Review Board may need access to the study information to make sure the study is done safely and appropriately.</li>\n      </ul>\n      <h3>HOW MIGHT THE INFORMATION COLLECTED IN THIS STUDY BE SHARED IN THE FUTURE?</h3>\n      <p>We will keep the information we collect about you during this research study for study recordkeeping. De-identified data from this study may be shared with the research community, with journals in which study results are published.</p>\n      <h3>PERSON TO CONTACT</h3>\n      <p>If you have any questions, concerns about this study, or if you believe you have experienced harm as a result of your participation, you may contact Dr. Chin at <a href=\"mailto:chin5@illinois.edu\">chin5@illinois.edu</a>.</p>\n      <p><strong>Institutional Review Board:</strong> If you have any questions about your rights as a research subject, including concerns, complaints, or to offer input, you may call the Office for the Protection of Research Subjects (OPRS) at 217-333-2670 or e-mail OPRS at <a href=\"mailto:irb@illinois.edu\">irb@illinois.edu</a>. If you would like to complete a brief survey to provide OPRS feedback about your experiences as a research participant, please follow the link here or through a link on the OPRS website: <a href=\"https://oprs.research.illinois.edu/\" target=\"_blank\" rel=\"noopener\">https://oprs.research.illinois.edu/</a>. You will have the option to provide feedback or concerns anonymously or you may provide your name and contact information for follow-up purposes.</p>\n      <h3>VOLUNTARY PARTICIPATION</h3>\n      <p>Research studies include only people who choose to take part. You can tell us that you don't want to be in this study. You can start the study and then choose to stop the study later. This will not affect your relationship with the investigator.</p>\n      <h3>COSTS AND COMPENSATION TO PARTICIPANTS</h3>\n      <p>The compensation is $15 for a study that takes approximately 60 minutes.</p>",
+  "firstLangRequired": "Please enter your first language.",
+  "englishAgeRequired": "Please enter the age at which you began to acquire English.",
+  "bgAllRequired": "Please answer every statement before continuing.",
+  "nameRequired": "Please enter your name.",
+  "pidRequired": "Please enter your Participant ID.",
+  "serverUnreachable": "Can't reach the server right now. Please try again in a moment.",
+  "phaseEnter": "— Topic {t} · Discussion {r} —",
+  "resumed": "— Resuming where you left off —",
+  "retryNow": "Retry",
+  "reconnecting": "Connection lost — reconnecting…",
+  "stillOffline": "Can't reach the server. Your progress is saved; it will continue once you are back online.",
+  "offlineNow": "You appear to be offline. Your progress is saved.",
+  "finishTitleNamed": "All done — thank you, {name}!",
+  "topicPill": "Topic",
+  "roundPill": "Discussion",
+  "topicLabel": "Topic:",
+  "goalLabel": "Learning goal:",
+  "state_reading": "Reading",
+  "state_onboarding": "Onboarding",
+  "state_debate": "Discussion",
+  "state_summary": "Summary",
+  "state_search": "Free search",
+  "state_rest": "Break",
+  "state_exam": "Questions",
+  "thinking": "Your learning partner is thinking…",
+  "onboardingPrompt": "Hi! Great job finishing the article. Before we start, let me quickly introduce how this works: for this topic we will have three rounds of discussion, each focusing on one question, and after each round you will get some free time to search for anything you are curious about. You and I have read different articles on the topic, so we may well see things differently — that's exactly the point of discussing. Throughout our conversation, please speak up actively, share your own opinions boldly, and feel free to question or push back on anything I say. Don't be shy — there are no wrong answers here. Are you ready to start the first discussion? Just let me know!",
+  "sourcesLabel": "Sources:",
+  "searching": "Searching authoritative sources…",
+  "somethingWrong": "Something went wrong: ",
+  "sendAgain": "That message didn't reach the server — it's back in the box, press Send to try again.",
+  "chatPlaceholder": "Type your thoughts… (Enter to send, Shift+Enter for a new line)",
+  "chatDisabledPlaceholder": "Discussion is paused during search — you can scroll up to review it",
+  "searchPlaceholder": "Ask anything you want to look up… (Enter to send)",
+  "searchDisabledPlaceholder": "Search opens after this discussion round — you can scroll up to review past searches",
+  "searchIntro": "Nice work finishing that discussion! You now have some free time to look things up. I'm a search assistant: ask me anything you're curious about, and I'll search authoritative sources on the web and report back what they say, with references. You decide what to explore — anything that came up in the discussion, anything you doubted, anything you want to verify. When you feel ready, click the button above to continue. So — what would you like to look up first?",
+  "examAllRequired": "Please answer every question before submitting."
 }
-function setLang(lang){
-  if(lang===LANG) return;
-  LANG = lang;
-  localStorage.setItem('lpLang', LANG);
-  applyI18n();
-  render();                 // 已在实验中时,同步刷新阶段/主题/学习目标等动态文案
+function t(key){ return UI_TEXT[key] ?? key; }
+function initializeUi(){
+  $('consentBody').innerHTML = UI_TEXT.consentBody;
+  renderStartWelcome();
+  renderHeader();
 }
 
 /* ---------- state ---------- */
 let S = null;      // 当前学习会话状态
-let USER = null;   // 当前登录用户
+let USER = null;   // 当前受试者(问卷提交后由服务端返回)
+let PID = '';      // 首页输入并已通过校验的 participant id
+let NAME = '';     // 首页输入的姓名(新用户注册时随问卷入库,老用户与库中姓名核对)
 const $ = id => document.getElementById(id);
+function escapeHtml(value){
+  const el = document.createElement('div');
+  el.textContent = value;
+  return el.innerHTML;
+}
+function renderStartWelcome(){
+  const title = $('startTitle');
+  const name = USER?.name || NAME || '';
+  if(title) title.innerHTML = `Welcome ${escapeHtml(name)}`;
+  const welcome = $('startWelcome');
+  if(!welcome) return;
+}
 // 统一的 API 调用封装
 const api = (path, body) => fetch('/api'+path, {
   method: body!==undefined ? 'POST' : 'GET',
   headers:{'Content-Type':'application/json'},
   body: body!==undefined ? JSON.stringify(body) : undefined
-}).then(async r=>{ if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.detail||r.status);} return r.json(); });
+}).then(async r=>{
+  if(!r.ok){
+    const e = await r.json().catch(()=>({}));
+    const err = new Error(e.detail || ('HTTP '+r.status));
+    err.status = r.status;                 // 409 = 服务端已完成该步,重新同步即可
+    throw err;
+  }
+  return r.json();
+});
 
 // 视图切换
-const VIEWS = ['login','consent','register','start','reading','chat','search','causal','finish'];
+const VIEWS = ['entry','consent','demog','background','start','reading','chat','rest','exam','finish'];
+const VIEW_TO_ROUTE = {
+  entry:'/',
+  consent:'/consent',
+  demog:'/demographics',
+  background:'/background',
+  start:'/start',
+  reading:'/reading',
+  chat:'/chat',
+  rest:'/rest',
+  exam:'/exam',
+  finish:'/finish',
+};
+const ROUTE_TO_VIEW = Object.fromEntries(Object.entries(VIEW_TO_ROUTE).map(([view, route]) => [route, view]));
+ROUTE_TO_VIEW['/search'] = 'chat';   // 旧的搜索页路由并入合并后的讨论+搜索页
+function routeForView(view){ return VIEW_TO_ROUTE[view] || '/'; }
 function showView(view){
-  // 未同意知情同意书不得进入注册页(兜底,防止绕过)
-  if(view==='register' && !CONSENTED){ view = 'consent'; }
+  // 未输入 participant id 不得越过首页(兜底,防止绕过)
+  if(view!=='entry' && !PID && !USER){ view = 'entry'; }
+  // 未同意知情同意书不得进入问卷页(兜底,防止绕过)
+  if((view==='demog' || view==='background') && !CONSENTED){ view = 'consent'; }
   for(const v of VIEWS) $(v).style.display='none';
+  if(view === 'start') renderStartWelcome();
   $(view).style.display='flex';
+  const target = routeForView(view);
+  const current = window.location.pathname || '/';
+  if(current !== target){ history.replaceState(null, '', target); }
 }
+window.addEventListener('popstate', () => {
+  const route = window.location.pathname || '/';
+  const view = ROUTE_TO_VIEW[route] || 'entry';
+  if(view === 'entry' && (PID || USER)) return;
+  showView(view);
+});
 function renderHeader(){
   if(USER){
-    $('userBadge').hidden=false; $('userBadge').textContent = USER.username;
+    $('userBadge').hidden=false;
+    $('userBadge').textContent = USER.name ? `${USER.name} (${USER.participant_id})` : USER.participant_id;
     $('logoutBtn').hidden=false;
   } else {
     $('userBadge').hidden=true; $('logoutBtn').hidden=true;
@@ -627,10 +742,10 @@ function renderHeader(){
 }
 
 /* ---------- 知情同意 ---------- */
-let CONSENTED = false;        // 本次注册流程是否已同意知情同意书
+let CONSENTED = false;        // 本次流程是否已同意知情同意书
 
-// 登录页点"注册" → 先进知情同意书,而不是直接进信息收集页
-function startRegistration(){
+// 首页 id 校验通过 → 看知情同意书,同意后直接建档开始(无问卷)
+function startConsent(){
   CONSENTED = false;
   $('consentCheck').checked = false;
   onConsentToggle();
@@ -643,99 +758,370 @@ function onConsentToggle(){
 function acceptConsent(){
   if(!$('consentCheck').checked) return;
   CONSENTED = true;
-  showView('register');
+  showView('demog');            // 同意后填写人口学信息,提交时才建档
+}
+
+// 非英语母语 → 展开第一语言/习得年龄两个补充问题
+function onNativeToggle(){
+  const no = document.querySelector('input[name="dmNative"]:checked')?.value === 'no';
+  $('dmNativeSub').hidden = !no;
+  if(!no){ $('dmFirstLang').value=''; $('dmEnglishAge').value=''; }
+}
+
+let DEMO = null;   // 人口学信息暂存,与背景调查一起在最后一步提交建档
+
+// 年龄默认由出生日期自动计算填充;受试者手动改过(AGE_MANUAL)后不再覆盖,清空则恢复自动
+let AGE_MANUAL = false;
+function autoFillAge(){
+  if(AGE_MANUAL) return;
+  const y = parseInt($('dmYear').value,10), m = parseInt($('dmMonth').value,10), d = parseInt($('dmDay').value,10);
+  if(!y || !m || !d || y < 1940) return;
+  const dob = new Date(y, m-1, d);
+  // 无效日期(如 2/30 会被 Date 进位)不填
+  if(dob.getFullYear()!==y || dob.getMonth()!==m-1 || dob.getDate()!==d) return;
+  const today = new Date();
+  let age = today.getFullYear() - y;
+  if(today.getMonth() < m-1 || (today.getMonth() === m-1 && today.getDate() < d)) age--;   // 今年生日未到
+  if(age >= 15 && age <= 120) $('dmAge').value = age;
+}
+
+function submitDemographics(ev){
+  ev.preventDefault(); hideErr('demogErr');
+  const pick = n => document.querySelector(`input[name="${n}"]:checked`)?.value;
+  const isNative = pick('dmNative') === 'yes';
+  if(!isNative && !$('dmFirstLang').value.trim()){
+    showErr('demogErr', t('firstLangRequired')); $('dmFirstLang').focus(); return false;
+  }
+  if(!isNative && $('dmEnglishAge').value === ''){
+    showErr('demogErr', t('englishAgeRequired')); $('dmEnglishAge').focus(); return false;
+  }
+  DEMO = {
+    birth_month: parseInt($('dmMonth').value,10),
+    birth_day: parseInt($('dmDay').value,10),
+    birth_year: parseInt($('dmYear').value,10),
+    age: parseInt($('dmAge').value,10),
+    gender: pick('dmGender'),
+    education_years: $('dmEdu').value,
+    native_english: isNative,
+    first_language: $('dmFirstLang').value.trim(),
+    english_age: $('dmEnglishAge').value === '' ? null : parseInt($('dmEnglishAge').value,10),
+    hispanic: pick('dmHispanic') === 'yes',
+    race: pick('dmRace'),
+  };
+  renderAils();
+  showView('background');
+  window.scrollTo(0,0);
+  return false;
+}
+
+/* AI Literacy Scale(Wang et al.)条目;AW_8/US_3/ET_2 为反向计分题(存原始作答,分析时换算) */
+const AILS = [
+  ["AW_1", "I can distinguish between smart devices and non-smart devices."],
+  ["AW_8", "I do not know how AI technology can help me."],
+  ["AW_9", "I can identify the AI technology employed in the applications and products I use."],
+  ["US_1", "I can skilfully use AI applications or products to help me with my daily work."],
+  ["US_3", "It is usually hard for me to learn to use a new AI application or product."],
+  ["US_5", "I can use AI applications or products to improve my work efficiency."],
+  ["EV_2", "I can evaluate the capabilities and limitations of an AI application or product after using it for a while."],
+  ["EV_3", "I can choose a proper solution from various solutions provided by a smart agent."],
+  ["EV_6", "I can choose the most appropriate AI application or product from a variety for a particular task."],
+  ["ET_1", "I always comply with ethical principles when using AI applications or products."],
+  ["ET_2", "I am never alert to privacy and information security issues when using AI applications or products."],
+  ["ET_5", "I am always alert to the abuse of AI technology."],
+];
+function renderAils(){
+  const wrap = $('ailsItems');
+  if(wrap.childElementCount) return;               // 只渲染一次,返回时保留已选答案
+  for(const [id, text] of AILS){
+    const item = document.createElement('div'); item.className='likertItem';
+    const pTag = document.createElement('p'); pTag.textContent = text; item.appendChild(pTag);
+
+    // 拖拽滑条 1-7:初始停在中点但视为未作答(untouched),拖动/点按后才计入
+    const row = document.createElement('div'); row.className='likertSlider untouched';
+    const val = document.createElement('span'); val.className='sliderVal'; val.textContent='–';
+    const track = document.createElement('div'); track.className='sliderRow';
+    const inp = document.createElement('input');
+    inp.type='range'; inp.min='1'; inp.max='7'; inp.step='1'; inp.value='4';
+    inp.id='ails_'+id;
+    const paint = ()=>{
+      const pct = (inp.value-1)/6*100;
+      inp.style.background = `linear-gradient(to right, var(--accent) ${pct}%, var(--line) ${pct}%)`;
+      val.textContent = inp.value;
+      row.classList.remove('untouched');
+    };
+    inp.addEventListener('input', paint);
+    inp.addEventListener('change', paint);        // 键盘操作也算作答
+    inp.addEventListener('pointerdown', paint);   // 点按滑条即算作答(否则答案恰为中点 4 时值不变、不触发 input)
+    inp.style.background = `linear-gradient(to right, var(--line) 100%, var(--line) 100%)`;
+    track.appendChild(inp);
+    row.appendChild(track); row.appendChild(val);
+    item.appendChild(row); wrap.appendChild(item);
+  }
+}
+
+function checkedValues(name){
+  return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(inp => inp.value);
+}
+function onLlmUseFrequencyChange(){
+  const never = $('llmUseFrequency').value === 'never';
+  $('llmPurposeQuestion').hidden = never;
+  if(never) document.querySelectorAll('input[name="llmPurpose"]').forEach(inp => inp.checked=false);
+  if(never){ $('llmUseOther').value=''; $('llmUseOtherField').hidden=true; }
+}
+function onLlmLearningFrequencyChange(){
+  const usesForLearning = $('llmLearningFrequency').value && $('llmLearningFrequency').value !== 'never';
+  $('llmLearningQuestions').hidden = !usesForLearning;
+  if(!usesForLearning){
+    // 只清空子问题,不能重置下拉框本身——否则选 "Never" 会被清回空值,必填校验永远不通过
+    $('llmLearningOther').value='';
+    document.querySelectorAll('input[name="llmLearningMethod"]').forEach(inp => inp.checked=false);
+    $('llmLearningOtherField').hidden=true;
+  }
+}
+document.addEventListener('change', ev => {
+  if(ev.target.name === 'llmPurpose') {
+    $('llmUseOtherField').hidden = !checkedValues('llmPurpose').includes('other');
+  } else if(ev.target.name === 'llmLearningMethod') {
+    $('llmLearningOtherField').hidden = !checkedValues('llmLearningMethod').includes('other');
+  }
+});
+
+async function submitBackground(ev){
+  ev.preventDefault(); hideErr('bgErr');
+  const major = $('bgMajor').value.trim();
+  const second_major = $('bgSecondMajor').value.trim();
+  const minor = $('bgMinor').value.trim();
+  if(!major){
+    showErr('bgErr', 'Please enter your major.');
+    $('bgMajor').scrollIntoView({behavior:'smooth', block:'center'});
+    return false;
+  }
+  const ails = {};
+  for(const [id] of AILS){
+    const inp = $('ails_'+id);
+    if(inp.closest('.likertSlider').classList.contains('untouched')){
+      showErr('bgErr', t('bgAllRequired'));
+      inp.closest('.likertItem').scrollIntoView({behavior:'smooth', block:'center'});
+      return false;
+    }
+    ails[id] = parseInt(inp.value,10);
+  }
+  const llm_use_frequency = $('llmUseFrequency').value;
+  const llm_use_purposes = checkedValues('llmPurpose');
+  const llm_use_other = $('llmUseOther').value.trim();
+  const llm_learning_frequency = $('llmLearningFrequency').value || null;
+  const llm_used_for_learning = llm_learning_frequency !== null && llm_learning_frequency !== 'never';
+  const llm_learning_methods = llm_used_for_learning ? checkedValues('llmLearningMethod') : [];
+  const llm_learning_other = llm_used_for_learning ? $('llmLearningOther').value.trim() : '';
+  if(!llm_use_frequency || (llm_use_frequency !== 'never' && !llm_use_purposes.length)
+      || (llm_use_frequency === 'never' && llm_used_for_learning)
+      || !llm_learning_frequency
+      || (llm_use_purposes.includes('other') && !llm_use_other)
+      || (llm_used_for_learning && (!llm_learning_frequency || !llm_learning_methods.length
+          || (llm_learning_methods.includes('other') && !llm_learning_other)))){
+    showErr('bgErr', 'Please answer all LLM use and learning questions before continuing.');
+    $('llmUseFrequency').scrollIntoView({behavior:'smooth', block:'center'});
+    return false;
+  }
+  const btn = ev.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  try{
+    USER = await api('/participant', {participant_id: PID, name: NAME, ...DEMO,
+      major, second_major, minor, ails,
+      llm_use_frequency, llm_use_purposes, llm_use_other, llm_used_for_learning,
+      llm_learning_frequency, llm_learning_methods, llm_learning_other});
+    localStorage.setItem('lpUser', JSON.stringify(USER));
+    renderHeader();
+    showView('start');          // 建档成功 → 欢迎页,由受试者点"开始"进入阅读
+  }catch(e){ showErr('bgErr', e.message); }
+  finally{ btn.disabled = false; }
+  return false;
 }
 function declineConsent(){
   CONSENTED = false;
-  showView('login');
+  showView('entry');
 }
 
-/* ---------- auth ---------- */
+/* ---------- participant id ---------- */
 function showErr(id, msg){ const e=$(id); e.textContent=msg; e.style.display='block'; }
 function hideErr(id){ $(id).style.display='none'; }
 
-async function doLogin(ev){
-  ev.preventDefault(); hideErr('loginErr');
+// 首页:新 id → 知情同意 + 背景问卷;已存在的 id → 直接恢复到上次停留的页面
+async function enterParticipant(ev){
+  ev.preventDefault(); hideErr('entryErr');
+  const name = $('entryName').value.trim();
+  const pid = $('entryPid').value.trim();
+  if(!name){ showErr('entryErr', t('nameRequired')); return false; }
+  if(!pid){ showErr('entryErr', t('pidRequired')); return false; }
+  const btn = ev.target.querySelector('button[type=submit]');
+  btn.disabled = true;
   try{
-    USER = await api('/login', {username: $('loginUsername').value.trim(), password: $('loginPassword').value});
-    localStorage.setItem('lpUser', JSON.stringify(USER));
-    renderHeader(); showView('start');
-  }catch(e){ showErr('loginErr', e.message); }
+    const r = await api('/participant/resolve', {participant_id: pid, name: name});
+    PID = r.participant_id; NAME = name;
+    if(r.new){
+      startConsent();            // 新 id:知情同意书 → 同意后直接建档开始
+    }else{
+      // 老用户:已完成全部流程 → resume 里 render() 直接进再见页;否则回到中断的环节
+      resume(r.participant, r.session, r.messages);
+    }
+  }catch(e){
+    if(e.status && e.status < 500) showErr('entryErr', e.message);
+    else showErr('entryErr', t('serverUnreachable'));
+    $('entryPid').focus();
+  }
+  finally{ btn.disabled = false; }
   return false;
-}
-// 勾选"其他"时展开自填输入框;取消勾选则隐藏并清空,避免残留内容被提交
-function onPurposeOtherToggle(){
-  const box = $('regAiPurpose').querySelector('input[value="other"]');
-  const input = $('regAiPurposeOther');
-  input.hidden = !box.checked;
-  if(box.checked) input.focus();
-  else input.value = '';
 }
 
-async function doRegister(ev){
-  ev.preventDefault(); hideErr('registerErr');
-  try{
-    const ageVal = $('regAge').value;
-    const usedForLearning = document.querySelector('input[name="aiUsedForLearning"]:checked').value === 'yes';
-    const purposes = Array.from($('regAiPurpose').querySelectorAll('input:checked')).map(i=>i.value);
-    const purposeOther = $('regAiPurposeOther').value.trim();
-    if(purposes.includes('other') && !purposeOther){
-      showErr('registerErr', t('purposeOtherRequired'));
-      $('regAiPurposeOther').focus();
-      return false;
+// 老受试者回到实验:恢复身份 → 重放对话记录 → 回到上次停留的环节
+function resume(participant, session, messages){
+  USER = participant; PID = participant.participant_id; NAME = participant.name || NAME; CONSENTED = true;
+  localStorage.setItem('lpUser', JSON.stringify(USER));
+  renderHeader();
+  if(!session){ showView('start'); return; }   // 填完问卷但还没点"开始"
+  restoreTranscript(messages || [], session);
+  S = session; render();
+}
+
+// phase(1-6) → 分隔提示 "— Topic t · Discussion r —"
+function roundSep(phase){
+  const rpt = S?.rounds_per_topic || 3;
+  const topic = Math.floor((phase-1)/rpt) + 1, round = (phase-1) % rpt + 1;
+  return t('phaseEnter').replace('{t}', topic).replace('{r}', round);
+}
+// 把历史发言重新画回讨论栏/搜索栏(两栏都完整重放,按讨论轮加分隔提示)
+function restoreTranscript(messages, session){
+  $('msgs').innerHTML=''; $('searchMsgs').innerHTML='';
+  const rpt = session.rounds_per_topic || 3;
+  const sep = phase => {
+    const topic = Math.floor((phase-1)/rpt) + 1, round = (phase-1) % rpt + 1;
+    return t('phaseEnter').replace('{t}', topic).replace('{r}', round);
+  };
+  let lastPhase = null, lastSearchPhase = null;
+  for(const m of messages){
+    const cls = m.role === 'participant' ? 'me' : 'agent';
+    if(m.state === 'search'){
+      if(m.phase !== lastSearchPhase){ addSearchMsg(sep(m.phase), 'sys'); lastSearchPhase = m.phase; }
+      addSearchMsg(m.content, cls); addSources(m.sources);
+      continue;
     }
-    USER = await api('/register', {
-      username: $('regUsername').value.trim(),
-      email: $('regEmail').value.trim(),
-      password: $('regPassword').value,
-      age: ageVal ? parseInt(ageVal,10) : null,
-      education: $('regEducation').value,
-      major: $('regMajor').value.trim(),
-      ai_level: parseInt($('regAiLevel').value, 10),
-      ai_principle_level: parseInt($('regAiPrincipleLevel').value, 10),
-      ai_frequency: $('regAiFrequency').value,
-      ai_purpose: purposes,
-      ai_purpose_other: purposeOther,
-      ai_used_for_learning: usedForLearning,
-    });
-    localStorage.setItem('lpUser', JSON.stringify(USER));
-    renderHeader();
-    showView('start');          // 注册成功 → 欢迎页,由受试者点"开始"进入阅读
-  }catch(e){ showErr('registerErr', e.message); }
-  return false;
+    if(lastPhase !== null && m.phase !== lastPhase) addMsg(sep(m.phase), 'sys');
+    lastPhase = m.phase;
+    addMsg(m.content, cls);
+  }
+  if(messages.length) addMsg(t('resumed'), 'sys');
 }
 function logout(){
-  USER = null; S = null; CONSENTED = false;
+  USER = null; S = null; CONSENTED = false; PID = ''; NAME = '';
+  $('entryName').value = ''; $('entryPid').value = ''; hideErr('entryErr');
   localStorage.removeItem('lpUser');
-  renderHeader(); showView('login');
+  renderHeader(); showView('entry');
 }
 
+/* ---------- 断线容错 ----------
+   任何请求失败后都不把错误直接丢给受试者:先向服务端要一次权威状态,
+   补齐可能没写成的 agent 回复,再按服务端状态重绘界面。受试者的进度全在服务端,
+   浏览器崩溃/刷新/换设备后重新输入 id 也能接着上次的位置继续。 */
+let CONN_BAD = false;        // 上一次请求是否失败(决定回到前台时要不要自动同步)
+let RECOVERING = false;      // 恢复流程互斥,避免并发重绘
+
+const sleep = ms => new Promise(r=>setTimeout(r, ms));
+
+function showConn(msg, isErr, withRetry){
+  const bar = $('connBar');
+  bar.className = isErr ? 'err' : '';
+  bar.textContent = msg;
+  if(withRetry){
+    const b = document.createElement('button');
+    b.textContent = t('retryNow'); b.onclick = ()=>recover();
+    bar.appendChild(b);
+  }
+  bar.hidden = false;
+}
+function hideConn(){ $('connBar').hidden = true; }
+
+// 重新同步到服务端状态;返回 {ok, messages}
+async function recover(){
+  if(RECOVERING || !PID) return {ok:false, messages:[]};
+  RECOVERING = true;
+  showConn(t('reconnecting'));
+  try{
+    for(let attempt=0; attempt<4; attempt++){
+      try{
+        let r = await api('/participant/resolve', {participant_id: PID, name: NAME});
+        if(!r.new && r.session && r.pending){
+          // 上一轮 agent 回复没写成(断线或模型调用失败)→ 让服务端补上,再取一次完整记录
+          try{
+            await api(`/session/${r.session.session_id}/retry-turn`, {});
+            r = await api('/participant/resolve', {participant_id: PID, name: NAME});
+          }catch(_){ /* 补不上就先按现状恢复,受试者可以自己再发一次 */ }
+        }
+        if(!r.new) resume(r.participant, r.session, r.messages);
+        CONN_BAD = false; hideConn();
+        return {ok:true, messages:r.messages||[]};
+      }catch(e){
+        if(attempt < 3) await sleep(1200*(attempt+1));   // 退避后重试
+      }
+    }
+    CONN_BAD = true;
+    showConn(t('stillOffline'), true, true);
+    return {ok:false, messages:[]};
+  } finally { RECOVERING = false; }
+}
+
+// 请求失败的统一处理:标记断线并尝试恢复
+async function onRequestFailed(err){
+  CONN_BAD = true;
+  if(err && err.status && err.status < 500 && err.status !== 409){
+    // 明确的业务错误(如参数不合法),恢复也没用
+    return {ok:false, messages:[], fatal:true, message:err.message};
+  }
+  return await recover();
+}
+
+window.addEventListener('online',  ()=>{ if(CONN_BAD) recover(); });
+window.addEventListener('offline', ()=> showConn(t('offlineNow'), true));
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && CONN_BAD) recover(); });
+
 /* ---------- experiment flow ---------- */
-// 取材料字段:中文模式优先用 _zh 译文,缺失则回退英文原文
 function fld(name){
-  if(!S) return '';
-  return ((LANG==='zh' ? S[name+'_zh'] : '') || S[name] || '');
+  return S?.[name] || '';
 }
 // 按会话状态渲染界面
 function render(){
   if(!S) return;
-  if(S.state==='finished'){ $('phasePill').hidden=true; $('stagePill').hidden=true;
-    $('topic').textContent=''; showView('finish'); return; }
+  if(S.state==='finished'){
+    $('phasePill').hidden=true; $('stagePill').hidden=true; $('topic').textContent='';
+    if(USER && USER.name) $('finishTitle').textContent = t('finishTitleNamed').replace('{name}', USER.name);
+    showView('finish'); return;
+  }
   $('phasePill').hidden=false;
-  $('phasePill').textContent = `${t('phaseLabel')} ${S.phase} / ${S.total_phases}`;
+  $('phasePill').textContent = `${t('topicPill')} ${S.topic_no} / ${S.total_topics} · ${t('roundPill')} ${S.round} / ${S.rounds_per_topic}`;
   $('stagePill').hidden=false;
   $('stagePill').textContent = t('state_'+S.state);        // 当前所处环节
   $('topic').textContent = t('topicLabel') + ' ' + fld('topic');
   if(S.state==='reading'){
     $('goal').textContent = t('goalLabel') + ' ' + fld('learning_goal');   // 阅读页顶部显示学习目标
     $('article').textContent = fld('article');
-    // 中文模式下且确有译文时,提示该材料为 AI 翻译
-    $('transNote').hidden = !(LANG==='zh' && S.article_zh);
     showView('reading'); window.scrollTo(0,0);
   }
-  else if(S.state==='search') showView('search');
-  else if(S.state==='causal'){ drawCausalGraph(S.causal_graph); showView('causal'); }
-  else showView('chat');
+  else if(S.state==='rest') showView('rest');
+  else if(S.state==='exam'){ renderExam(); showView('exam'); window.scrollTo(0,0); }
+  else{ updatePanes(); showView('chat'); }
+}
+// 双栏读写切换:讨论环节只允许左栏发言,搜索环节只允许右栏发言;另一栏保留记录可滚动回看
+function updatePanes(){
+  const inSearch = S?.state === 'search';
+  const inDiscuss = !inSearch;
+  $('chatPane').classList.toggle('active', inDiscuss);
+  $('searchPane').classList.toggle('active', inSearch);
+  $('input').disabled = !inDiscuss;
+  $('sendBtn').disabled = !inDiscuss;
+  $('input').placeholder = t(inDiscuss ? 'chatPlaceholder' : 'chatDisabledPlaceholder');
+  $('searchInput').disabled = !inSearch;
+  $('searchSendBtn').disabled = !inSearch;
+  $('endSearchBtn').disabled = !inSearch;
+  $('searchInput').placeholder = t(inSearch ? 'searchPlaceholder' : 'searchDisabledPlaceholder');
 }
 function addMsg(text, cls){
   const d=document.createElement('div'); d.className='msg '+cls; d.textContent=text;
@@ -750,17 +1136,38 @@ function setTyping(on){
 }
 
 async function startSession(){
-  try{ S = await api('/session', {participant: USER ? USER.username : ''}); render(); }
-  catch(e){ alert('Could not start: '+e.message); }
+  const btn = $('start').querySelector('button');
+  btn.disabled = true;
+  try{
+    const r = await api('/session', {participant: USER ? USER.participant_id : PID});
+    if(r.resumed) restoreTranscript(r.messages || [], r);    // 已开始过 → 恢复,不重开
+    S = r; hideConn(); render();
+  }catch(e){
+    const res = await onRequestFailed(e);
+    if(res.fatal) showConn(res.message, true);
+  }
+  finally{ btn.disabled = false; }
 }
 async function doneReading(){
+  $('doneBtn').disabled = true;
   try{
     const r = await api(`/session/${S.session_id}/done-reading`, {});
-    S = r; $('msgs').innerHTML='';
-    // onboarding 开场白:用前端本地化文案(跟随当前语言),服务端存英文档案版本
-    addMsg(t('onboardingPrompt'), 'agent');
-    render(); $('input').focus();
-  }catch(e){ alert(e.message); }
+    if(r.state==='onboarding'){
+      // 主题 1:onboarding 开场白用前端本地化文案,服务端存英文档案版本
+      S = r; $('msgs').innerHTML='';
+      addMsg(t('onboardingPrompt'), 'agent');
+    }else{
+      // 主题 2:agent 直接开场进入第一轮讨论(保留主题 1 的对话记录,加分隔提示)
+      S = r;
+      addMsg(roundSep(r.phase), 'sys');
+      for(const m of (r.agent_messages||[])) addMsg(m,'agent');
+    }
+    hideConn(); render(); $('input').focus();
+  }catch(e){
+    const res = await onRequestFailed(e);
+    if(res.fatal) showConn(res.message, true);
+  }
+  finally{ $('doneBtn').disabled = false; }
 }
 function addSearchMsg(text, cls){
   const d=document.createElement('div'); d.className='msg '+cls; d.textContent=text;
@@ -790,13 +1197,21 @@ async function sendSearch(){
   addSearchMsg(text,'me'); $('searchInput').value=''; $('searchSendBtn').disabled=true;
   $('endSearchBtn').disabled=true; setSearchTyping(true);
   try{
-    const r = await api(`/session/${S.session_id}/search-message`, {content:text, lang:LANG});
+    const r = await api(`/session/${S.session_id}/search-message`, {content:text});
     setSearchTyping(false);
     for(const m of (r.agent_messages||[])) addSearchMsg(m,'agent');
     addSources(r.sources);
     S = r; render();
-  }catch(e){ setSearchTyping(false); addSearchMsg(t('somethingWrong')+e.message,'sys'); }
-  finally{ $('searchSendBtn').disabled=false; $('endSearchBtn').disabled=false; $('searchInput').focus(); }
+  }catch(e){
+    setSearchTyping(false);
+    const res = await onRequestFailed(e);
+    if(res.fatal){ addSearchMsg(t('somethingWrong')+res.message,'sys'); }
+    else{
+      const delivered = res.ok && res.messages.some(m=>m.role==='participant' && m.content===text);
+      if(!delivered && !$('searchInput').value){ $('searchInput').value = text; addSearchMsg(t('sendAgain'),'sys'); }
+    }
+  }
+  finally{ updatePanes(); if(S?.state==='search') $('searchInput').focus(); }
 }
 async function endSearch(){
   if($('endSearchBtn').disabled) return;
@@ -804,31 +1219,47 @@ async function endSearch(){
   try{
     const r = await api(`/session/${S.session_id}/end-search`, {});
     setSearchTyping(false);
-    // 进入因果图评分页(评分提交后才回到学习伙伴)
-    S = r; render();
-  }catch(e){ setSearchTyping(false); addSearchMsg(t('somethingWrong')+e.message,'sys'); }
-  finally{ $('endSearchBtn').disabled=false; $('searchSendBtn').disabled=false; }
+    if(r.state==='debate'){
+      // 下一轮讨论:分隔提示 + agent 开场
+      addMsg(roundSep(r.phase),'sys');
+      for(const m of (r.agent_messages||[])) addMsg(m,'agent');
+      S = r; hideConn(); render(); $('input').focus();
+    }else{
+      // 主题 1 三轮已毕 → 休息页;主题 2 三轮已毕 → 考试页
+      S = r; hideConn(); render();
+    }
+  }catch(e){
+    setSearchTyping(false);
+    const res = await onRequestFailed(e);
+    if(res.fatal) addSearchMsg(t('somethingWrong')+res.message,'sys');
+  }
+  finally{ updatePanes(); }
 }
 async function send(){
   const text=$('input').value.trim();
   if(!text || $('sendBtn').disabled) return;
   addMsg(text,'me'); $('input').value=''; $('sendBtn').disabled=true; setTyping(true);
   try{
-    const prevPhase=S.phase;
-    const r = await api(`/session/${S.session_id}/message`, {content:text, lang:LANG});
+    const r = await api(`/session/${S.session_id}/message`, {content:text});
     setTyping(false);
     const msgs = r.agent_messages||[];
     for(const m of msgs) addMsg(m,'agent');
     if(r.state==='search' && S.state!=='search'){
-      // 阶段收尾 → 进入自主搜索环节:搜索页展示本地化开场白(服务端已存英文档案版)
-      $('searchMsgs').innerHTML='';
+      // 本轮讨论收尾 → 进入自主搜索:保留右栏历史记录,加分隔提示后追加开场白
+      addSearchMsg(roundSep(r.phase),'sys');
       addSearchMsg(t('searchIntro'),'agent');
     }
-    S = r;
-    if(S.state==='finished'){ setTimeout(render, 2500); }   // 全部结束,留时间读收尾语
-    else render();                                          // 刷新阶段/环节徽章
-  }catch(e){ setTyping(false); addMsg(t('somethingWrong')+e.message,'sys'); }
-  finally{ $('sendBtn').disabled=false; $('input').focus(); }
+    S = r; hideConn();
+    render();                                               // 刷新主题/环节徽章
+  }catch(e){
+    setTyping(false);
+    const res = await onRequestFailed(e);
+    if(res.fatal){ addMsg(t('somethingWrong')+res.message,'sys'); return; }
+    // 恢复后:这句话若没送到服务端,就还回输入框,让受试者按发送重试
+    const delivered = res.ok && res.messages.some(m=>m.role==='participant' && m.content===text);
+    if(!delivered && !$('input').value){ $('input').value = text; addMsg(t('sendAgain'),'sys'); }
+  }
+  finally{ updatePanes(); if(S?.state!=='search') $('input').focus(); }
 }
 $('input').addEventListener('keydown', e=>{
   if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
@@ -837,119 +1268,84 @@ $('searchInput').addEventListener('keydown', e=>{
   if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendSearch(); }
 });
 
-/* ---------- causal diagram ---------- */
-function onCausalSlider(){
-  const el = $('causalScore'), v = el.value;
-  $('causalScoreVal').textContent = v;
-  // 同步滑条填充色(与注册页滑条一致):已滑过部分用强调色
-  el.style.background = `linear-gradient(to right, var(--accent) ${v*10}%, var(--line) ${v*10}%)`;
-}
-// 分层布局:按"最长入边路径深度"分列,同列纵向均分;有环时深度截断兜底
-function causalLayout(nodes, edges){
-  const depth = {};
-  const incoming = id => edges.filter(e=>e.target===id).map(e=>e.source);
-  function calc(id, seen){
-    if(id in depth) return depth[id];
-    if(seen.has(id)) return 0;                       // 环:截断
-    seen.add(id);
-    const ins = incoming(id);
-    depth[id] = ins.length ? Math.max(...ins.map(p=>calc(p, seen)))+1 : 0;
-    return depth[id];
-  }
-  nodes.forEach(n=>calc(n.id, new Set()));
-  const cols = {};
-  nodes.forEach(n=>{ (cols[depth[n.id]] ||= []).push(n); });
-  return {depth, cols};
-}
-function drawCausalGraph(graph){
-  const wrap = $('causalSvgWrap');
-  wrap.innerHTML = '';
-  if(!graph || !graph.nodes || !graph.nodes.length) return;
-  const nodes = graph.nodes, edges = graph.edges||[];
-  const label = n => (LANG==='zh' && n.label_zh) ? n.label_zh : n.label;
-  const {depth, cols} = causalLayout(nodes, edges);
-  const nCols = Object.keys(cols).length;
-  const colW = 250, boxH = 44, gapY = 34, padX = 40, padY = 30;
-  const maxRows = Math.max(...Object.values(cols).map(c=>c.length));
-  const W = Math.max(720, nCols*colW + padX*2);
-  const H = Math.max(320, maxRows*(boxH+gapY) + padY*2);
-  const pos = {};
-  for(const [d, arr] of Object.entries(cols)){
-    const x = padX + (+d)*colW + colW/2;
-    const totalH = arr.length*boxH + (arr.length-1)*gapY;
-    let y = (H - totalH)/2 + boxH/2;
-    for(const n of arr){ pos[n.id] = {x, y}; y += boxH + gapY; }
-  }
-  const NS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(NS,'svg');
-  svg.setAttribute('width', W); svg.setAttribute('height', H);
-  svg.innerHTML = `<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
-      markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3d5a80"/></marker></defs>`;
-  const boxW = 190;
-  // 边:从源框右缘到目标框左缘的曲线;同列/回指时绕行
-  for(const e of edges){
-    const a = pos[e.source], b = pos[e.target];
-    if(!a || !b) continue;
-    const p = document.createElementNS(NS,'path');
-    let d;
-    if(b.x > a.x){
-      const x1=a.x+boxW/2, x2=b.x-boxW/2, mx=(x1+x2)/2;
-      d = `M ${x1} ${a.y} C ${mx} ${a.y}, ${mx} ${b.y}, ${x2} ${b.y}`;
-    }else{
-      // 同列或反向:从底/顶绕行
-      const down = b.y >= a.y;
-      const y1 = a.y + (down? boxH/2 : -boxH/2), y2 = b.y + (down? -boxH/2 : boxH/2);
-      d = `M ${a.x} ${y1} C ${a.x} ${y1+(down?40:-40)}, ${b.x} ${y2+(down?-40:40)}, ${b.x} ${y2}`;
-    }
-    p.setAttribute('d', d);
-    p.setAttribute('fill','none'); p.setAttribute('stroke','#3d5a80');
-    p.setAttribute('stroke-width','1.8'); p.setAttribute('marker-end','url(#arrow)');
-    p.setAttribute('opacity','.75');
-    svg.appendChild(p);
-  }
-  // 节点
-  for(const n of nodes){
-    const {x,y} = pos[n.id];
-    const g = document.createElementNS(NS,'g');
-    const r = document.createElementNS(NS,'rect');
-    r.setAttribute('x', x-boxW/2); r.setAttribute('y', y-boxH/2);
-    r.setAttribute('width', boxW); r.setAttribute('height', boxH);
-    r.setAttribute('rx', 10);
-    r.setAttribute('fill','#fff'); r.setAttribute('stroke','#3d5a80'); r.setAttribute('stroke-width','1.5');
-    g.appendChild(r);
-    const txt = document.createElementNS(NS,'text');
-    txt.setAttribute('x', x); txt.setAttribute('y', y);
-    txt.setAttribute('text-anchor','middle'); txt.setAttribute('dominant-baseline','central');
-    txt.setAttribute('font-size','13'); txt.setAttribute('fill','#22303c');
-    let name = label(n);
-    if(name.length > 26) name = name.slice(0,25)+'…';
-    txt.textContent = name;
-    g.appendChild(txt);
-    svg.appendChild(g);
-  }
-  wrap.appendChild(svg);
-}
-async function submitCausalRating(){
-  if($('causalSubmitBtn').disabled) return;
-  $('causalSubmitBtn').disabled = true;
+/* ---------- rest & exam ---------- */
+// 休息页:点击"继续"进入主题 2 的阅读
+async function endRest(){
+  const btn = $('restBtn');
+  if(btn.disabled) return;
+  btn.disabled = true;
   try{
-    const r = await api(`/session/${S.session_id}/causal-rating`, {score: parseInt($('causalScore').value,10), lang:LANG});
-    // 回到学习伙伴页面:分隔提示 + 新阶段 agent 开场
-    addMsg(t('phaseEnter').replace('{n}', r.phase),'sys');
-    for(const m of (r.agent_messages||[])) addMsg(m,'agent');
-    S = r; render(); $('input').focus();
-  }catch(e){ alert(t('somethingWrong')+e.message); }
-  finally{ $('causalSubmitBtn').disabled = false; }
+    const r = await api(`/session/${S.session_id}/end-rest`, {});
+    // 主题 2 是一条全新的独立会话:换 session_id,清空两栏聊天记录
+    $('msgs').innerHTML=''; $('searchMsgs').innerHTML='';
+    S = r; hideConn(); render();
+  }catch(e){
+    const res = await onRequestFailed(e);
+    if(res.fatal) showConn(res.message, true);
+  }
+  finally{ btn.disabled = false; }
+}
+
+// 考试页:渲染题目(每题一个文本框);已渲染过则保留作答
+function renderExam(){
+  const wrap = $('examItems');
+  const qs = S?.exam_questions || [];
+  if(wrap.childElementCount === qs.length && qs.length) return;
+  wrap.innerHTML = '';
+  qs.forEach((q, i) => {
+    const item = document.createElement('div'); item.className = 'examItem';
+    const p = document.createElement('p'); p.className = 'examQ';
+    p.textContent = `${i+1}. ${q}`;
+    const ta = document.createElement('textarea');
+    ta.id = 'examAnswer'+i;
+    item.appendChild(p); item.appendChild(ta);
+    wrap.appendChild(item);
+  });
+}
+async function submitExam(){
+  const btn = $('examSubmitBtn');
+  if(btn.disabled) return;
+  const qs = S?.exam_questions || [];
+  const answers = qs.map((_, i) => $('examAnswer'+i).value.trim());
+  const missing = answers.findIndex(a => !a);
+  if(missing >= 0){
+    showConn(t('examAllRequired'), true);
+    $('examAnswer'+missing).focus();
+    $('examAnswer'+missing).scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  btn.disabled = true;
+  try{
+    const r = await api(`/session/${S.session_id}/exam`, {answers});
+    S = r; hideConn(); render();          // finished → 致谢结束页
+  }catch(e){
+    const res = await onRequestFailed(e);
+    if(res.fatal) showConn(res.message, true);
+  }
+  finally{ btn.disabled = false; }
 }
 
 /* ---------- init ---------- */
 (function init(){
-  applyI18n();
-  const saved = localStorage.getItem('lpUser');
-  if(saved){ try{ USER = JSON.parse(saved); }catch(_){ USER=null; } }
+  initializeUi();
+  const requested = ROUTE_TO_VIEW[window.location.pathname] || 'entry';
+  // 刷新后自动回到上次停留的环节(与在首页重新输入 id 走同一条恢复路径)
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem('lpUser')); }catch(_){}
   renderHeader();
-  showView(USER ? 'start' : 'login');
+  showView(requested);
+  if(saved && saved.participant_id && saved.name){
+    PID = saved.participant_id; NAME = saved.name;  // 让 recover() 知道恢复哪个受试者
+    api('/participant/resolve', {participant_id: PID, name: NAME})
+      .then(r=>{
+        if(r.new){ PID=''; localStorage.removeItem('lpUser'); return; }
+        resume(r.participant, r.session, r.messages);
+        if(r.pending) recover();                    // 上次断在半路 → 补齐那一轮回复
+      })
+      .catch(()=>{ CONN_BAD = true; recover(); });   // 服务端还没起来:退避重试,别清掉身份
+  }else{
+    localStorage.removeItem('lpUser');              // 旧版本(账号密码)留下的缓存
+  }
 })();
 </script>
 </body>

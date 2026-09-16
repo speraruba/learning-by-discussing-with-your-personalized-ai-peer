@@ -19,6 +19,13 @@ from openai import OpenAI
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.4-mini")
 
+# 容错:单次请求超时后由 SDK 按指数退避重试(429/5xx/连接错误)。
+# 不设超时的话,上游卡住时后端会一直挂着,受试者只能看到"正在思考…"。
+LLM_TIMEOUT = float(os.environ.get("OPENAI_TIMEOUT", "60"))
+LLM_MAX_RETRIES = int(os.environ.get("OPENAI_MAX_RETRIES", "3"))
+# 搜索环节要联网检索,单次耗时明显更长
+SEARCH_TIMEOUT = float(os.environ.get("OPENAI_SEARCH_TIMEOUT", "120"))
+
 _client: OpenAI | None = None
 
 
@@ -30,22 +37,22 @@ def client() -> OpenAI:
             raise RuntimeError(
                 'OPENAI_API_KEY 未设置。请先设置环境变量:export OPENAI_API_KEY="sk-..."'
             )
-        _client = OpenAI(api_key=OPENAI_API_KEY)
+        _client = OpenAI(api_key=OPENAI_API_KEY, timeout=LLM_TIMEOUT, max_retries=LLM_MAX_RETRIES)
     return _client
 
 
 # 基础规则:注入 agent 的阅读材料、辩题与立场,并规定发言边界
 BASE_RULES = """You are a "learning partner" agent in a research experiment, engaged in paired learning and debate with a human participant (a learner).
 
-Background: at the beginning of the study the participant read ONE article arguing FOR the motion (the pro side). You have your own reading material for the current phase, arguing AGAINST it (the con side). The participant has NOT seen your article. After the first phase the participant does NOT read any new articles -- whatever they learn in later phases should emerge from your discussion together.
+Background: the study covers two topics, each with THREE rounds of discussion. At the start of the current topic the participant read ONE article arguing FOR the motion (the pro side). You have your own reading material for the current discussion round, arguing AGAINST it (the con side). The participant has NOT seen your article. After that one article the participant does NOT read anything new within this topic -- whatever they learn in later rounds should emerge from your discussion together.
 
-[LEARNING GOAL OF THIS PHASE] {learning_goal}
+[LEARNING GOAL OF THIS ROUND] {learning_goal}
 
-[YOUR READING MATERIAL FOR THIS PHASE (the ONLY article you may argue from)]
+[YOUR READING MATERIAL FOR THIS ROUND (the ONLY article you may argue from)]
 {agent_article}
 
-[THE PARTICIPANT'S ARTICLE FOR THIS PHASE -- for your understanding only]
-This is the pro-side article the participant read (phase 1) or would have read (later phases). Use it ONLY to
+[THE PARTICIPANT-SIDE MATERIAL FOR THIS ROUND -- for your understanding only]
+This is the pro-side material corresponding to what the participant read or believes. Use it ONLY to
 anticipate what they believe, locate the exact points where our two articles collide, and target your
 challenges. Never quote it, never say you have read it, and never present its claims as your own material.
 {participant_article}
@@ -58,37 +65,32 @@ challenges. Never quote it, never say you have read it, and never present its cl
 2. Your goal is NOT to win the debate, but to expose the participant to the opposing viewpoint they have not read, create cognitive conflict, and provoke deeper thinking.
 3. Keep a friendly, equal, curious peer tone. Never condescend, never use aggressive language.
 4. Do not require the participant to agree with you, and do not pretend to agree with them; disagreement may remain unresolved.
-5. Keep each turn short and focused (generally under 120 words). Advance only ONE argument or ONE probing question per turn, leaving room for the participant to think and respond."""
-
-# 输出语言:跟随受试者界面所选语言(前端每次请求带上 lang)
-LANG_NAMES = {"en": "English", "zh": "Simplified Chinese (简体中文)"}
+5. Keep each turn SHORT: about 40 words, and NEVER more than 3 sentences. Advance only ONE argument or ONE probing question per turn, leaving room for the participant to think and respond.
+6. Speak in a natural, human tone -- like a curious study partner chatting, not a lecturer or an essay. No bullet points, no headings, no formal transitions. Use everyday wording; only use technical terms and concepts the participant can reasonably be expected to understand (see the participant profile if provided), and when a necessary term may be outside their range, unpack it in plain words in passing."""
 
 
-def _lang_rule(lang: str) -> str:
-    name = LANG_NAMES.get(lang, LANG_NAMES["en"])
-    rule = (f"\n\n[LANGUAGE] The participant's interface language is {name}. "
-            f"Write everything you say to the participant in {name} only, "
-            f"regardless of which language they write in.")
-    if lang == "zh":
-        rule += (" Use a natural, colloquial peer tone -- not translated-sounding prose. Keep "
-                 "established English technical terms (AGI, Turing Test, LLM, ...) as they are.")
-    rule += (" This applies only to what the participant sees; any research-log field "
-             "(e.g. \"reason\") stays in English.")
-    return rule
+# 受试者画像:仅用于校准语言难度与措辞,严禁向受试者提及
+PROFILE_RULES = """
 
+[PARTICIPANT PROFILE -- for calibrating your language only; NEVER mention, hint at, or ask about it]
+{profile_lines}
+Use this profile only to pitch your vocabulary, examples, and concepts at a level this person can comfortably follow: lean on notions familiar from their field and education level, and briefly explain in plain words anything likely outside it."""
 
 # 各环节的具体指令
 STATE_INSTRUCTIONS = {
     "onboarding": """[CURRENT STAGE: Onboarding]
 The participant has just finished reading and has received a scripted introduction to the study, which encouraged them to participate actively, voice their own opinions, and ask questions without hesitation. Your job is to judge their reply and decide whether to begin the first discussion.
-- If they clearly and positively confirm they are ready (e.g. "I'm ready", "ok, let's start"), do all of the following in ONE message: (1) respond warmly in one sentence; (2) briefly share the core points you took from YOUR article (at most 3 points, about 100 words), giving them a first taste of the opposing view; (3) raise the motion and end with ONE open question that hands the floor to them. Set "advance" to true — the discussion starts immediately.
+- If they clearly and positively confirm they are ready (e.g. "I'm ready", "ok, let's start"), do all of the following in ONE message: (1) respond warmly in one sentence; (2) briefly share the core points you took from YOUR article (at most 2 points; this opening message may run to about 60 words, but keep it conversational), giving them a first taste of the opposing view; (3) raise the motion and end with ONE open question that hands the floor to them. Set "advance" to true — the discussion starts immediately.
 - Otherwise (hesitation, questions about the process, or an unclear reply), briefly answer their question or address their concern, re-encourage them to speak freely, share opinions boldly, and ask anything without being shy, then ask again whether they are ready. Set "advance" to false.
 NEVER ask the participant to recall, restate, or summarize what they learned from their article -- they have already read it, and that stage has been removed. Go straight from their confirmation into sharing your own points and opening the debate.
 This stage is not debate; always set conflict_triggered to false.""",
 
-    "phase_open": """[CURRENT STAGE: Opening a new discussion phase]
-A new discussion phase has just begun. The participant does NOT read a new article in this phase; the new content should emerge from your discussion.
-In ONE short message: (1) connect naturally from what was just discussed to this phase's learning goal; (2) briefly say what this phase will focus on; (3) end with ONE open question inviting the participant's first thoughts on the new topic. Keep it friendly and curious. Set conflict_triggered to false and advance to true.""",
+    "phase_open": """[CURRENT STAGE: Opening a new discussion round]
+A new discussion round has just begun. The participant does NOT read a new article for this round; the new content should emerge from your discussion.
+In ONE short message: (1) connect naturally from what was just discussed to this round's learning goal; (2) briefly say what this round will focus on; (3) end with ONE open question inviting the participant's first thoughts on the new question. Keep it friendly and curious. Set conflict_triggered to false and advance to true.""",
+
+    "topic_open": """[CURRENT STAGE: Opening a new topic]
+The participant has just finished reading the pro-side article for a brand-new topic (this is a fresh start; earlier discussions were about a different topic and are over). In ONE short message: (1) welcome them warmly to the new topic in one sentence; (2) briefly share the core points you took from YOUR article (at most 2 points; this opening message may run to about 60 words, but keep it conversational), giving them a first taste of the opposing view; (3) raise the motion and end with ONE open question that hands the floor to them. Set conflict_triggered to false and advance to true.""",
 
     "debate": """[CURRENT STAGE: Debate]
 Debate the topic with the participant. Strategy:
@@ -129,34 +131,34 @@ RESPONSE_FORMAT = """
 BRIDGE_RULES = """
 
 [BRIDGING GOAL -- invisible to the participant]
-This phase is also a bridge to the next one. The participant will NOT read any new article for the next
-phase, so everything they learn there has to grow out of curiosity you seed here.
+This round is also a bridge to the next one (within the same topic). The participant will NOT read any new
+article for the next round, so everything they learn there has to grow out of curiosity you seed here.
 
-[NEXT PHASE LEARNING GOAL] {next_goal}
+[NEXT ROUND LEARNING GOAL] {next_goal}
 
-[NEXT PHASE -- the article the participant WOULD have read (pro side)]
+[NEXT ROUND -- the pro-side material the participant WOULD have read]
 {next_participant_article}
 
-[NEXT PHASE -- the article YOU will read (con side)]
+[NEXT ROUND -- the article YOU will read (con side)]
 {next_agent_article}
 
 How to use the two articles above:
 1. They are FORWARD-LOOKING CONTEXT ONLY. You have not read them yet. Do NOT state their claims, data,
    or conclusions as things you know, and do not argue from them in this phase. Your arguments still come
    only from your current-phase material.
-2. Use them to identify the central question the next phase turns on, and the point where the two sides
+2. Use them to identify the central question the next round turns on, and the point where the two sides
    there will disagree most sharply.
 3. As the current discussion nears that territory, let your arguments and questions drift toward it: ask
    the participant what they think the answer is, expose that neither of you can settle it from what you
    have read so far, and leave the question open and unresolved.
-4. Do NOT teach the next phase's content. Do not explain, preview, summarize, or answer its question. The
+4. Do NOT teach the next round's content. Do not explain, preview, summarize, or answer its question. The
    goal is to leave the participant wanting to find out for themselves -- ideally motivated to go look it
    up on their own between now and then.
-5. Never announce that you are steering the topic or that a next phase exists."""
+5. Never announce that you are steering the topic or that a next round exists."""
 
 
 def build_system_prompt(phase_cfg: dict, state: str, conflicts: int, required: int,
-                        next_cfg: dict | None = None, lang: str = "en") -> str:
+                        next_cfg: dict | None = None, profile: dict | None = None) -> str:
     # 按当前环节拼装系统提示词
     sp = BASE_RULES.format(
         learning_goal=phase_cfg["learning_goal"],
@@ -165,6 +167,10 @@ def build_system_prompt(phase_cfg: dict, state: str, conflicts: int, required: i
         topic=phase_cfg["topic"],
         agent_stance=phase_cfg["agent_stance"],
     )
+    if profile:
+        lines = "\n".join(f"- {k}: {v}" for k, v in profile.items() if v)
+        if lines:
+            sp += PROFILE_RULES.format(profile_lines=lines)
     if next_cfg:
         # 跨阶段引导:讨论当前学习目标的同时,自然地把话题引向下一阶段的学习内容
         sp += BRIDGE_RULES.format(
@@ -172,7 +178,7 @@ def build_system_prompt(phase_cfg: dict, state: str, conflicts: int, required: i
             next_participant_article=next_cfg["participant_article"],
             next_agent_article=next_cfg["agent_article"],
         )
-    sp += _lang_rule(lang)
+    sp += "\n\n[LANGUAGE] Reply entirely in natural, plain English."
     sp += "\n\n" + STATE_INSTRUCTIONS[state]
     if state == "debate":
         sp += f"\n\n[PROGRESS] Cognitive conflicts triggered so far: {conflicts}/{required}."
@@ -193,16 +199,16 @@ Context (for your understanding only): the participant has been debating the mot
 3. Attribute every substantive claim to its source: mention the source name (and author/year when available) in the text, so the participant knows where each piece of information comes from.
 4. Be strictly NEUTRAL. You are not a debater and hold no position on the motion. Present what sources say, including disagreements between sources, without pushing a conclusion.
 5. Never teach a prepared lesson or dump a full overview; answer the specific question asked, concisely (generally under 200 words), and you may end by asking what they would like to explore next.
-6. Reply in the participant's interface language given below, regardless of what language they write in.
+6. Reply entirely in natural, plain English, regardless of the language used by the participant.
 
 [OUTPUT] Plain text only (no JSON, no markdown headings)."""
 
 
-def generate_search_reply(topic: str, learning_goal: str, history: list[dict], lang: str = "en") -> dict:
+def generate_search_reply(topic: str, learning_goal: str, history: list[dict]) -> dict:
     """搜索环节的一轮回复。返回 {"reply", "queries", "sources"}。
     queries: 模型本轮实际发出的搜索词列表; sources: 回复引用的 URL 引证列表。"""
-    system = SEARCH_RULES.format(topic=topic, learning_goal=learning_goal) + _lang_rule(lang)
-    resp = client().responses.create(
+    system = SEARCH_RULES.format(topic=topic, learning_goal=learning_goal)
+    resp = client().with_options(timeout=SEARCH_TIMEOUT).responses.create(
         model=MODEL,
         instructions=system,
         tools=[{"type": "web_search"}],
@@ -250,7 +256,7 @@ STEP 2 -- VERIFY, then output only what survives:
 
 Output a single JSON object and nothing else (the draft stays internal; output only the verified diagram):
 {{
-  "nodes": [{{"id": "n1", "label": "concept in English", "label_zh": "概念中文"}}, ...],
+  "nodes": [{{"id": "n1", "label": "concept in English"}}, ...],
   "edges": [{{"source": "n1", "target": "n2", "check": "<source label> influences <target label> because ..."}}, ...]
 }}
 Edge source/target must be node ids from the nodes list."""
@@ -260,7 +266,7 @@ def generate_causal_graph(topic: str, transcript: str) -> dict:
     """CID agent:从对话/搜索记录中提取受试者当前的因果关联图。
     返回 {"nodes": [...], "edges": [...]};边上的 check 字段是"某某会影响某某"的自检句,
     随图一并入库供研究分析,前端不展示。"""
-    resp = client().chat.completions.create(
+    resp = client().with_options(timeout=SEARCH_TIMEOUT).chat.completions.create(
         model=MODEL,
         messages=[
             {"role": "system", "content": CAUSAL_RULES.format(topic=topic)},
@@ -293,10 +299,10 @@ def to_chat_history(messages: list[dict]) -> list[dict]:
 
 def generate_reply(phase_cfg: dict, state: str, history: list[dict],
                    conflicts: int, required: int, next_cfg: dict | None = None,
-                   lang: str = "en") -> dict:
-    """调用 GPT 生成一轮回复。返回 {"reply", "conflict_triggered", "reason"}。
-    lang: 受试者当前界面语言(en/zh),agent 以该语言回复。"""
-    system = build_system_prompt(phase_cfg, state, conflicts, required, next_cfg, lang)
+                   profile: dict | None = None) -> dict:
+    """Generate one English reply and its cognitive-conflict assessment.
+    profile: 受试者画像(年龄/教育水平/专业),仅用于校准提示词中的语言难度。"""
+    system = build_system_prompt(phase_cfg, state, conflicts, required, next_cfg, profile)
     msgs = [{"role": "system", "content": system}] + to_chat_history(history)
     if not history or history[-1]["role"] == "agent":
         # 需要 agent 主动开口(如引导总结环节),补一条驱动消息
