@@ -1,0 +1,227 @@
+# 知识图谱自定义本体(ontology)。
+# 由 kg/ontology.py 加载;改完重新运行即可生效,无需改代码。
+#
+# - classes:    概念类别。每个 concept 必须属于其中之一。
+# - concepts:   受控词表。key 为规范 id(写入 Neo4j 的 Concept.key);
+#               terms 为同义写法,匹配时忽略大小写与单复数(按词形还原后比较)。
+#               不在词表中的名词短语仍会入图(class=Unclassified),由 policy 控制。
+# - relations:  关系类型。triggers 为动词(或"动词_介词")的词形还原形式;
+#               抽到的谓词不在任何 triggers 中时,归为 RELATED_TO 并保留原动词。
+#               带介词的谓词(rely_on)须整体登记;只登记 learn 不会让 learn_through 也命中。
+#
+# 词表初稿取自 materials/ 下两个主题的阅读材料,需研究团队审定后再扩充。
+
+version: "0.1.0"
+
+policy:
+  keep_unclassified_concepts: true   # false: 只保留词表内概念及其关系
+  keep_untyped_relations: true       # false: 丢弃映射不到关系类型的边(RELATED_TO)
+
+classes:
+  Technology:        AI systems, models and tools
+  Intelligence:      kinds and properties of intelligence
+  CognitiveProcess:  mental operations (memory, reasoning, retrieval ...)
+  LearningOutcome:   what learning produces or loses (retention, skills, expertise ...)
+  Phenomenon:        named effects discussed in the materials (offloading, deskilling ...)
+  Assessment:        ways of measuring intelligence or learning
+  TrainingMethod:    how AI models are built (data, prediction, statistics ...)
+  Agent:             human actors (learners, students, professionals ...)
+
+concepts:
+  # ---- Technology
+  ai:
+    class: Technology
+    terms: [AI, artificial intelligence, AI system, AI tool, AI model, generative AI, gen AI, AI assistance, the AI]
+  llm:
+    class: Technology
+    terms: [large language model, LLM, language model, chatbot, ChatGPT, GPT, Claude, Gemini]
+  search_engine:
+    class: Technology
+    terms: [search engine, Google, internet search, online search]
+  gps:
+    class: Technology
+    terms: [GPS, navigation app]
+  computational_tool:
+    class: Technology
+    terms: [tool, computational tool, technology, external tool]
+
+  # ---- Intelligence
+  agi:
+    class: Intelligence
+    terms: [AGI, artificial general intelligence, general intelligence, human-level intelligence]
+  human_intelligence:
+    class: Intelligence
+    terms: [human intelligence, human cognition, biological intelligence]
+  intelligence:
+    class: Intelligence
+    terms: [intelligence, intelligent behavior]
+  understanding:
+    class: Intelligence
+    terms: [understanding, comprehension, genuine understanding, real understanding]
+  consciousness:
+    class: Intelligence
+    terms: [consciousness, awareness, sentience]
+  adaptability:
+    class: Intelligence
+    terms: [adaptability, adaptation, flexibility, generalization]
+  creativity:
+    class: Intelligence
+    terms: [creativity, originality, new idea, novel idea]
+
+  # ---- CognitiveProcess
+  memory:
+    class: CognitiveProcess
+    terms: [memory, remembering, recall, working memory, long-term memory]
+  reasoning:
+    class: CognitiveProcess
+    terms: [reasoning, reasoning skill, logic, thinking, critical thinking, independent thinking]
+  retrieval:
+    class: CognitiveProcess
+    terms: [retrieval, information retrieval, retrieving information]
+  problem_solving:
+    class: CognitiveProcess
+    terms: [problem solving, problem-solving]
+  decision_making:
+    class: CognitiveProcess
+    terms: [decision making, decision-making, judgment, judgement]
+  perception:
+    class: CognitiveProcess
+    terms: [perception]
+  cognitive_resources:
+    class: CognitiveProcess
+    terms: [cognitive resource, cognitive capacity, cognitive load, mental effort, effort, attention]
+  knowledge_construction:
+    class: CognitiveProcess
+    terms: [knowledge construction, synthesis, integration, explanation, self-explanation]
+
+  # ---- LearningOutcome
+  learning:
+    class: LearningOutcome
+    terms: [learning, human learning, independent learning]
+  knowledge:
+    class: LearningOutcome
+    terms: [knowledge, durable knowledge, information]
+  skill:
+    class: LearningOutcome
+    terms: [skill, cognitive skill, ability, competence, independent skill]
+  expertise:
+    class: LearningOutcome
+    terms: [expertise, professional expertise]
+  retention:
+    class: LearningOutcome
+    terms: [retention, long-term retention]
+  transfer:
+    class: LearningOutcome
+    terms: [transfer, knowledge transfer]
+  performance:
+    class: LearningOutcome
+    terms: [performance, task performance, assisted performance, accuracy]
+
+  # ---- Phenomenon
+  cognitive_offloading:
+    class: Phenomenon
+    terms: [cognitive offloading, offloading]
+  cognitive_dependency:
+    class: Phenomenon
+    terms: [cognitive dependency, dependency, dependence, over-reliance, overreliance, reliance]
+  deskilling:
+    class: Phenomenon
+    terms: [deskilling, cognitive deskilling, skill decay, skill loss]
+  desirable_difficulty:
+    class: Phenomenon
+    terms: [desirable difficulty, productive struggle, struggle, difficulty]
+  illusion_of_competence:
+    class: Phenomenon
+    terms: [illusion of competence]
+  practice:
+    class: Phenomenon
+    terms: [practice, repeated practice]
+
+  # ---- Assessment
+  turing_test:
+    class: Assessment
+    terms: [Turing test, imitation game]
+  benchmark:
+    class: Assessment
+    terms: [benchmark, test, exam, evaluation, assessment, IQ test]
+
+  # ---- TrainingMethod
+  training_data:
+    class: TrainingMethod
+    terms: [training data, data, text, dataset, human-generated text]
+  next_token_prediction:
+    class: TrainingMethod
+    terms: [next token, next-token prediction, token prediction, token]
+  pattern_matching:
+    class: TrainingMethod
+    terms: [pattern matching, pattern, statistical pattern]
+  probability:
+    class: TrainingMethod
+    terms: [probability, statistics, statistical relationship, statistical computation]
+  training:
+    class: TrainingMethod
+    terms: [training, machine learning, deep learning]
+
+  # ---- Agent
+  human:
+    class: Agent
+    terms: [human, person, people, user, individual]
+  learner:
+    class: Agent
+    terms: [learner, student]
+  professional:
+    class: Agent
+    terms: [professional, physician, doctor, expert]
+  researcher:
+    class: Agent
+    terms: [researcher, scientist, critic]
+
+relations:
+  IS_A:
+    description: taxonomic / copular ("AI is a tool")
+    triggers: [be, become, remain]
+  ENHANCES:
+    description: source improves or increases target
+    triggers: [improve, enhance, increase, strengthen, boost, support, help, extend, augment, facilitate, expand, benefit]
+  REDUCES:
+    description: source weakens or decreases target
+    triggers: [reduce, decrease, weaken, hinder, impair, undermine, erode, lower, diminish, harm, hurt, limit, interfere_with, damage, decline]
+  CAUSES:
+    description: source brings about target
+    triggers: [cause, create, produce, lead_to, result_in, trigger, encourage, drive, generate]
+  REPLACES:
+    description: source substitutes for or removes target
+    triggers: [replace, substitute, bypass, eliminate, remove, take_over, skip]
+  DEPENDS_ON:
+    description: source relies on target
+    triggers: [depend_on, rely_on, require, need, use, utilize, dependent_on, reliant_on]
+  MEASURES:
+    description: source evaluates target
+    triggers: [measure, assess, evaluate, test, determine]
+  INCLUDES:
+    description: source has target as a part or component
+    triggers: [include, involve, contain, comprise, consist_of, have]
+  PERFORMS:
+    description: source carries out target
+    triggers: [perform, do, carry_out, execute, complete, solve]
+  LEARNS:
+    description: source acquires target
+    triggers: [learn, acquire, develop, build]
+  LEARNS_FROM:
+    description: source learns from target
+    triggers: [learn_from, learn_through, learn_via]
+  TRAINED_ON:
+    description: source (a model) is trained on target
+    triggers: [train_on, train_with, train_using]
+  UNDERSTANDS:
+    description: source comprehends target
+    triggers: [understand, comprehend, know, grasp]
+  PREDICTS:
+    description: source predicts target
+    triggers: [predict, guess, forecast]
+  DIFFERS_FROM:
+    description: source is contrasted with target
+    triggers: [different_from, differ_from, distinct_from, differ]
+  SIMILAR_TO:
+    description: source resembles or imitates target
+    triggers: [similar_to, resemble, mimic, imitate, comparable_to, be_like]

@@ -8,3 +8,7 @@ faster-whisper>=1.0
 # PyAV 15 removed av.open(metadata_errors=...), which faster-whisper still passes,
 # and 14.3+ has no Windows/py3.12 wheel. Install with: pip install --only-binary=:all: av==14.2.0
 av==14.2.0
+# Knowledge-graph pipeline (kg/). After installing, also run: python -m spacy download en_core_web_sm
+spacy>=3.7,<4
+neo4j>=5.20,<6
+PyYAML>=6.0
