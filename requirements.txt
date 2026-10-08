@@ -3,3 +3,8 @@ uvicorn>=0.29
 openai>=1.30
 pydantic>=2.6
 PyMySQL>=1.1
+python-multipart>=0.0.9
+faster-whisper>=1.0
+# PyAV 15 removed av.open(metadata_errors=...), which faster-whisper still passes,
+# and 14.3+ has no Windows/py3.12 wheel. Install with: pip install --only-binary=:all: av==14.2.0
+av==14.2.0
