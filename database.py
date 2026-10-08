@@ -165,6 +165,35 @@ SCHEMA: dict[str, dict] = {
                                        "REFERENCES `sessions` (`id`) ON DELETE CASCADE",
         },
     },
+    # 自由回忆(Free Recall):阅读后、第一轮讨论前,受试者口述所记内容。
+    # 浏览器端 MediaRecorder 录音 -> 服务端落盘 -> 本地 Whisper 转写 -> transcript 入库。
+    # 音频文件存于 recordings/(已 gitignore),库中只存相对路径。
+    # kind: baseline(阅读后基线) | post(全流程结束后),(session_id, kind) 唯一,便于幂等。
+    "free_recalls": {
+        "columns": [
+            ("id", "BIGINT NOT NULL AUTO_INCREMENT"),
+            ("session_id", "VARCHAR(32) NOT NULL"),
+            ("topic", "INT NOT NULL"),                          # 该 session 对应的主题编号
+            ("kind", "VARCHAR(16) NOT NULL DEFAULT 'baseline'"),
+            ("audio_path", "VARCHAR(512) NULL"),                # 相对 recordings/ 的路径
+            ("audio_bytes", "INT NULL"),
+            ("transcript", "MEDIUMTEXT NULL"),
+            ("status", "VARCHAR(16) NOT NULL DEFAULT 'uploaded'"),   # uploaded|transcribing|done|failed
+            ("error", "VARCHAR(512) NULL"),                     # 转写失败时的原因
+            ("created_at", "DATETIME(6) NOT NULL"),
+            ("transcribed_at", "DATETIME(6) NULL"),
+            # 最近一次上传时间,兼作转写任务的"版本号":重复上传后旧任务的结果不会覆盖新录音
+            ("uploaded_at", "DATETIME(6) NULL"),
+        ],
+        "primary_key": "`id`",
+        "indexes": {
+            "uq_free_recalls_session_kind": "UNIQUE KEY `uq_free_recalls_session_kind` (`session_id`, `kind`)",
+        },
+        "foreign_keys": {
+            "fk_free_recalls_session": "CONSTRAINT `fk_free_recalls_session` FOREIGN KEY (`session_id`) "
+                                       "REFERENCES `sessions` (`id`) ON DELETE CASCADE",
+        },
+    },
     # AI 推测的受试者因果关联图(旧流程遗留数据;当前流程不再生成),含受试者 0-10 评分
     "causal_graphs": {
         "columns": [
@@ -555,8 +584,59 @@ def get_participant(participant_id: str) -> dict | None:
         return cur.fetchone()
 
 
+# ---------------------------------------------------------------- free recall
+def add_free_recall(sid: str, topic: int, audio_path: str, audio_bytes: int,
+                    kind: str = "baseline") -> tuple[int, datetime]:
+    """登记一条自由回忆录音。同一 (session, kind) 重复提交时覆盖音频并重置转写状态,
+    保证断线重连/重复提交幂等(与其他 POST 端点一致)。
+    返回 (id, uploaded_at);uploaded_at 交给转写任务,回写时据此丢弃过期结果。"""
+    now = _now()
+    with _conn().cursor() as cur:
+        cur.execute(
+            "INSERT INTO free_recalls (session_id, topic, kind, audio_path, audio_bytes, "
+            "status, created_at, uploaded_at) VALUES (%s, %s, %s, %s, %s, 'uploaded', %s, %s) "
+            "ON DUPLICATE KEY UPDATE audio_path=VALUES(audio_path), "
+            "audio_bytes=VALUES(audio_bytes), status='uploaded', transcript=NULL, "
+            "error=NULL, transcribed_at=NULL, uploaded_at=VALUES(uploaded_at), "
+            "id=LAST_INSERT_ID(id)",
+            (sid, topic, kind, audio_path, audio_bytes, now, now),
+        )
+        return cur.lastrowid, now
+
+
+# 以下两个回写都带 uploaded_at 条件:转写途中受试者重新上传时,旧任务的结果直接作废。
+# <=> 是 NULL 安全的等号(兼容加列之前已存在的行)。
+def set_free_recall_status(recall_id: int, uploaded_at: datetime | None, status: str,
+                           error: str | None = None):
+    with _conn().cursor() as cur:
+        cur.execute("UPDATE free_recalls SET status=%s, error=%s WHERE id=%s AND uploaded_at <=> %s",
+                    (status, (error or None) and error[:512], recall_id, uploaded_at))
+
+
+def set_free_recall_transcript(recall_id: int, uploaded_at: datetime | None, transcript: str):
+    with _conn().cursor() as cur:
+        cur.execute(
+            "UPDATE free_recalls SET transcript=%s, status='done', error=NULL, "
+            "transcribed_at=%s WHERE id=%s AND uploaded_at <=> %s",
+            (transcript, _now(), recall_id, uploaded_at),
+        )
+
+
+def get_free_recall(sid: str, kind: str = "baseline") -> dict | None:
+    with _conn().cursor() as cur:
+        cur.execute("SELECT * FROM free_recalls WHERE session_id=%s AND kind=%s", (sid, kind))
+        return cur.fetchone()
+
+
+def get_free_recalls(sid: str) -> list[dict]:
+    with _conn().cursor() as cur:
+        cur.execute("SELECT * FROM free_recalls WHERE session_id=%s ORDER BY id ASC", (sid,))
+        return list(cur.fetchall())
+
+
 # 读操作统一加一层"断线重连后重试一次"。写操作不自动重试,避免重复入库。
 for _name in ("get_session", "get_latest_session", "get_messages", "get_search_queries",
               "get_exam_answers", "get_latest_causal_graph", "get_causal_graphs",
+              "get_free_recall", "get_free_recalls",
               "get_participant", "get_participant_row"):
     globals()[_name] = _retrying(globals()[_name])
