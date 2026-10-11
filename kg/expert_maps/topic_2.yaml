@@ -1,0 +1,90 @@
+# 专家概念图:主题 2(AI & Cognition)。
+# 来源:AI&Cognition reading material.docx(2026-10-10 版)。材料改版后照着改这里即可。
+#
+# - concepts:     必学概念。key 必须在 ontology.yaml 里;round 为所属讨论轮次,
+#                 contributor 为该概念出现在哪一方的材料里(peer = AI 学伴,user = 受试者);
+#                 required: false 的概念不计入覆盖率。
+# - propositions: 材料里的每条 statement(源概念 → 动词 → 目标)。
+#     target       目标也是必学概念时填 key,这类命题可以拿受试者的图来核对;
+#     accept       受试者图里的哪些关系类型算"说对了"(用词不同但意思一致);
+#     target_text  目标是一段描述(定义、属性)时填原文,这类命题图上无法逐边核对,只记录不打分。
+
+topic: 2
+title: AI & Cognition
+
+concepts:
+  cognitive_resources:    {round: 1, contributor: peer}
+  cognitive_offloading:   {round: 1, contributor: user}
+  cognitive_labor:        {round: 1, contributor: peer}
+  extended_mind:          {round: 1, contributor: user}
+  core_delegation:        {round: 2, contributor: peer}
+  peripheral_delegation:  {round: 2, contributor: peer}
+  performance_reliance:   {round: 3, contributor: peer}
+  skill_reallocation:     {round: 3, contributor: peer}
+  independent_capability: {round: 3, required: false}     # 终点概念,材料说明不要求学习,不计入覆盖率
+
+propositions:
+  # ---- Round 1
+  - {id: "1.1", source: cognitive_resources, verb: are, target_text: "A person's limited mental energy and attention",
+     statement: "Cognitive Resources are a person's limited mental energy and attention."}
+  - {id: "1.2", source: cognitive_resources, verb: can be used up by, target_text: "A demanding task",
+     statement: "Cognitive Resources can be used up quickly by a demanding task."}
+  - {id: "1.3", source: cognitive_resources, verb: encourage, target: cognitive_offloading,
+     accept: [CAUSES, ENHANCES],
+     statement: "Cognitive Resources encourage Cognitive Offloading."}
+  - {id: "2.1", source: cognitive_offloading, verb: moves, target_text: "Mental work from inside the mind to an outside resource",
+     statement: "Cognitive Offloading moves work out of your head and onto something outside, like a notebook or an app."}
+  - {id: "2.2", source: cognitive_offloading, verb: can use, target_text: "Notes, calculators, or AI tools",
+     statement: "Cognitive Offloading can use notes, calculators, or AI."}
+  - {id: "2.3", source: cognitive_offloading, verb: redistributes, target: cognitive_labor,
+     accept: [REDISTRIBUTES, AFFECTS],
+     statement: "Cognitive Offloading changes who does what, the person or the tool."}
+  - {id: "2.4", source: cognitive_offloading, verb: can integrate into, target: extended_mind,
+     accept: [INTEGRATES_INTO, CAUSES, IS_A],
+     statement: "Cognitive Offloading can integrate into Extended Mind."}
+  - {id: "3.1", source: cognitive_labor, verb: is, target_text: "The mental work a task requires",
+     statement: "Cognitive Labor is the mental work a task requires."}
+  - {id: "3.2", source: cognitive_labor, verb: can be carried out by, target_text: "A person, AI, or both",
+     statement: "Cognitive Labor can be carried out by a person, by AI, or by both."}
+  - {id: "3.3", source: cognitive_labor, verb: can concentrate in, target: core_delegation,
+     accept: [CONCENTRATES_IN, CAUSES],
+     statement: "Cognitive Labor can concentrate in Core Delegation."}
+  - {id: "4.1", source: extended_mind, verb: means, target_text: "An outside tool functions like part of the mind",
+     statement: "Extended Mind means an outside tool functions like part of the mind."}
+  - {id: "4.2", source: extended_mind, verb: requires, target_text: "The tool to be used often and relied on",
+     statement: "Extended Mind requires the tool to be used often and relied on."}
+  - {id: "4.3", source: extended_mind, verb: can support, target: peripheral_delegation,
+     accept: [ENHANCES, CAUSES],
+     statement: "Extended Mind can support Peripheral Delegation."}
+
+  # ---- Round 2
+  - {id: "5.1", source: core_delegation, verb: is when, target_text: "AI carries out the central step of a task itself",
+     statement: "Core Delegation is when AI carries out the central step of a task itself."}
+  - {id: "5.2", source: core_delegation, verb: means, target_text: "The person does not personally produce that step",
+     statement: "Core Delegation means the person doesn't do the central step themselves."}
+  - {id: "5.3", source: core_delegation, verb: can lead to, target: performance_reliance,
+     accept: [CAUSES, ENHANCES],
+     statement: "Core Delegation can lead to Performance Reliance."}
+  - {id: "6.1", source: peripheral_delegation, verb: is when, target_text: "AI carries out supporting steps, such as searching or formatting",
+     statement: "Peripheral Delegation is when AI does the smaller supporting steps, like searching or formatting."}
+  - {id: "6.2", source: peripheral_delegation, verb: leaves, target_text: "The central step of a task to the person",
+     statement: "Peripheral Delegation leaves the main step of the task for the person to do."}
+  - {id: "6.3", source: peripheral_delegation, verb: can lead to, target: skill_reallocation,
+     accept: [CAUSES, ENHANCES],
+     statement: "Peripheral Delegation can lead to Skill Reallocation."}
+
+  # ---- Round 3
+  - {id: "7.1", source: performance_reliance, verb: is, target_text: "A condition where performance depends on AI being available",
+     statement: "Performance Reliance means how well a person does depends on AI being there to help."}
+  - {id: "7.2", source: performance_reliance, verb: can develop, target_text: "Gradually, without one clear moment of change",
+     statement: "Performance Reliance builds up slowly over time, not all at once."}
+  - {id: "7.3", source: performance_reliance, verb: feeds into, target: independent_capability,
+     accept: [AFFECTS, REDUCES, CAUSES, ENHANCES],
+     statement: "Performance Reliance feeds into Independent Capability."}
+  - {id: "8.1", source: skill_reallocation, verb: is, target_text: "A change in which skills a person practices most over time",
+     statement: "Skill Reallocation is a change in which skills a person practices most over time."}
+  - {id: "8.2", source: skill_reallocation, verb: can involve, target_text: "A shift toward tasks like judgment or evaluation",
+     statement: "Skill Reallocation often means practicing more judgment and evaluation instead."}
+  - {id: "8.3", source: skill_reallocation, verb: feeds into, target: independent_capability,
+     accept: [AFFECTS, ENHANCES, CAUSES, REDUCES],
+     statement: "Skill Reallocation feeds into Independent Capability."}

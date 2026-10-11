@@ -65,6 +65,46 @@ check(g.relations[0].evidence == ["AI is a tool."], "evidence sentence kept")
 
 check(build_graph("").relations == [] and build_graph("").concepts == {}, "empty text")
 
+# ---- emergent(词表外)概念
+_, g = rels("Testing, testing, testing. Yeah, so use the topics vocabulary. See any gaps.")
+check(not [c for c in g.concepts.values() if c.status == "emergent"], "junk and meta-talk filtered")
+
+r, g = rels("AI tutors help students.")
+c = g.concepts.get("ai tutor")
+check(c is not None and c.status == "emergent" and c.core_parts == ["ai"], "emergent concept linked to its core part")
+check(("ai tutor", "ENHANCES", "learner", False) in r, "emergent concept takes part in relations")
+
+_, g = rels("I like calculators.")
+check("calculator" not in g.concepts, "emergent mentioned once and unconnected is dropped")
+_, g = rels("Calculators are old. Calculators are everywhere.")
+check(g.concepts.get("calculator") and g.concepts["calculator"].status == "emergent", "emergent mentioned twice is kept")
+
+_, g = rels("Any gaps hurt learning.")
+check(g.concepts.get("gap") and g.concepts["gap"].label == "gaps", "emergent label drops leading quantifier")
+check(g.concepts["gap"].examples == ["Any gaps hurt learning."], "emergent concept keeps example sentence")
+check(g.concepts["learning"].status == "core", "ontology concept is core")
+
+# ---- 专家概念图对照
+from kg import expert                                    # noqa: E402
+emap = expert.load(2, onto)
+check(emap is not None and len(emap.required()) == 8 and len(emap.required(2)) == 2, "expert map loads")
+check(expert.load(1, onto) is None, "topic without expert map -> None")
+
+def statuses(text, rnd=None):
+    sc = expert.score(build_graph(text), emap, rnd)
+    return {p["id"]: p["status"] for p in sc["propositions"]}, sc
+
+st, sc = statuses("Core delegation leads to performance reliance. "
+                  "I don't think performance reliance improves independent capability.", rnd=2)
+check(st["5.3"] == "matched", "proposition matched in participant's own words")
+check(st["7.3"] == "negated", "denied proposition marked negated")
+check(st["1.3"] == "missing", "unstated proposition missing")
+check(sc["concepts_covered"] == ["core_delegation", "performance_reliance"] and sc["coverage_rate"] == 0.25,
+      "coverage excludes non-required endpoint concept")
+check(sc["round_concepts_missing"] == ["peripheral_delegation"], "per-round coverage")
+st, _ = statuses("Performance reliance comes from core delegation.")
+check(st["5.3"] == "linked", "connected differently -> linked")
+
 # ---------------------------------------------------------------- 2. 端到端
 if not os.environ.get("NEO4J_PASSWORD"):
     print(f"\n{ok} extraction checks passed; NEO4J_PASSWORD not set, skipping end-to-end")
@@ -121,9 +161,28 @@ db.set_free_recall_transcript(rid, up, "AI is a tool.")
 pipeline.build_for_session(sid, "recall")
 check(counts() == {"m": 2, "r": 1}, "rebuild replaces old edges")
 
-for stage in pipeline.STAGES:
-    neo4j_store.delete_graph(f"{sid}:{stage}")
+# 主题 2 有专家图:构建时顺带打分,写到 Graph 节点上;emergent 概念可被汇总
+s2 = db.create_session("KG001", topic=2, phase=4)
+sid2 = s2["id"]
+rid2, up2 = db.add_free_recall(sid2, 2, f"{sid2}/baseline.webm", 100)
+db.set_free_recall_transcript(rid2, up2, "Core delegation leads to performance reliance. "
+                              "AI tutors help students. Calculators are old. Calculators are everywhere.")
+out = pipeline.build_for_session(sid2, "recall")
+check(out["score"]["proposition_counts"]["matched"] == 1, "build returns expert-map score")
+g2 = q("MATCH (g:Graph {id:$g}) RETURN g.coverage_rate AS cr, g.propositions_matched AS pm, "
+       "g.emergent_count AS ec", g=f"{sid2}:recall")[0]
+check(g2 == {"cr": 0.25, "pm": ["5.3"], "ec": 2}, f"score stored on graph node {g2}")
+cands = {c["key"]: c for c in neo4j_store.emergent_candidates(topic=2)}
+check({"ai tutor", "calculator"} <= set(cands) and cands["ai tutor"]["participants"] == 1
+      and cands["ai tutor"]["examples"] == ["AI tutors help students."], "emergent candidates report")
+rep = {x["stage"]: x for x in neo4j_store.session_report(sid2)}
+check(rep["recall"]["matched"] == ["5.3"] and rep["recall"]["relations"] == 2, "session report")
+
+for s_ in (sid, sid2):
+    for stage in pipeline.STAGES:
+        neo4j_store.delete_graph(f"{s_}:{stage}")
 q("MATCH (p:Participant {id:'KG001'}) DETACH DELETE p")
-check(not q("MATCH ()-[r]->() WHERE r.graph_id STARTS WITH $s RETURN r", s=sid), "cleanup")
+check(not q("MATCH ()-[r]->() WHERE r.graph_id STARTS WITH $s OR r.graph_id STARTS WITH $s2 RETURN r",
+            s=sid, s2=sid2), "cleanup")
 neo4j_store.close()
 print(f"\nALL {ok} CHECKS PASSED")

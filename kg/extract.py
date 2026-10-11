@@ -11,6 +11,10 @@
   apply_ontology    本体阶段:概念分类、谓词映射为关系类型、按 policy 过滤
   assemble          聚合成图(去重计数,保留证据句)
 
+概念分两种:core(在 ontology.yaml 词表里)和 emergent(词表外,受试者自己提出的)。
+emergent 概念要过质量门槛才入图:中心词是名词、不是泛词/元话语词,
+且被提到至少 policy.emergent_min_mentions 次或参与了某条关系(随口一提的词不算受试者的知识)。
+
 已知局限(有意为之,宁缺毋滥):
 - 不做指代消解:主语/宾语是 it/they/this 的句子不出关系;
 - 不跨句;不处理从句作宾语("X shows that ...");
@@ -55,7 +59,13 @@ GENERIC = {
     "time", "year", "day", "one", "number", "amount", "use", "usage", "reason", "aspect",
     "side", "argument", "article", "reading", "passage", "example", "sense", "matter",
     "issue", "problem", "situation", "et al", "al", "lot of", "end", "level", "degree",
+    # 元话语:谈论任务/对话本身,而不是学习内容
+    "topic", "vocabulary", "word", "term", "sentence", "statement", "concept", "material",
+    "testing", "yeah", "okay", "ok",
 }
+# emergent 概念的展示名去掉这些开头的词("the topics" → "topics","how quality" → "quality")
+_LEADING_JUNK_POS = {"DET", "PRON", "ADV", "SCONJ", "CCONJ", "PART", "INTJ", "PUNCT", "NUM"}
+_LEADING_JUNK_TAGS = {"WDT", "WP", "WP$", "WRB", "PRP$"}
 # "the use of AI" / "a lot of data" 这类短语,语义中心在 of 的宾语上
 LIGHT_NOUNS = {"use", "usage", "amount", "lot", "number", "kind", "type", "sort", "form",
                "deal", "bunch", "piece", "set", "collection", "majority", "variety"}
@@ -78,6 +88,7 @@ class Mention:
     source: str              # ontology | ner | noun_chunk
     ner_label: str | None = None
     head: str | None = None
+    core_parts: list[str] = field(default_factory=list)   # 短语里包含的词表概念("AI tutor" → [ai])
 
 
 @dataclass
@@ -103,6 +114,9 @@ class Concept:
     surface_forms: list[str] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)
     ner_labels: list[str] = field(default_factory=list)
+    status: str = "core"     # core(词表内)| emergent(词表外,已过质量门槛)
+    core_parts: list[str] = field(default_factory=list)
+    examples: list[str] = field(default_factory=list)      # 最多两句原文,供研究者审阅 emergent 概念
 
 
 @dataclass
@@ -152,7 +166,19 @@ def normalize_span(tokens) -> str:
 
 
 def _usable(key: str) -> bool:
+    words = key.split()
+    if len(words) > 1 and len(set(words)) == 1:          # "testing testing testing"
+        return False
     return len(key) >= 2 and key not in GENERIC and not key.isdigit()
+
+
+def clean_surface(tokens) -> str:
+    """原文写法去掉开头的限定词/代词/疑问词/副词,作 emergent 概念的展示名。"""
+    toks = list(tokens)
+    while toks and (toks[0].pos_ in _LEADING_JUNK_POS or toks[0].tag_ in _LEADING_JUNK_TAGS):
+        toks = toks[1:]
+    return "".join(t.text_with_ws for t in toks).strip(" ,.;:'\"") or "".join(
+        t.text_with_ws for t in tokens).strip()
 
 
 def make_term_normalizer(nlp):
@@ -209,7 +235,7 @@ def extract_mentions(doc, onto) -> tuple[list[Mention], dict[int, str]]:
             continue
         key = normalize_span(ent)
         if _usable(key):
-            mentions.append(Mention(key, ent.text, sent_of[ent.start], "ner", ent.label_))
+            mentions.append(Mention(key, clean_surface(ent), sent_of[ent.start], "ner", ent.label_))
             for t in ent:
                 tokmap[t.i] = key
 
@@ -219,9 +245,10 @@ def extract_mentions(doc, onto) -> tuple[list[Mention], dict[int, str]]:
     # - 短语里有两个以上不同的本体概念 → 复合概念("AI learning" 不能并成 learning,
     #   否则 "AI learning is different from human learning" 会变成自环而丢失)。
     # 轻名词/泛词作中心的短语不立概念,由 _resolve 顺着 of 找真正的中心。
+    # 中心词必须是名词:小模型偶尔把动词/形容词("tweak"、"refining")当短语中心。
     for chunk in doc.noun_chunks:
         root = chunk.root
-        if root.pos_ == "PRON" or root.lemma_.lower() in LIGHT_NOUNS | GENERIC:
+        if root.pos_ not in ("NOUN", "PROPN") or root.lemma_.lower() in LIGHT_NOUNS | GENERIC:
             continue
         onto_keys = {tokmap[t.i] for t in chunk if t.i in tokmap and tokmap[t.i] in onto.concept_class}
         if root.i in tokmap and len(onto_keys) < 2:
@@ -230,7 +257,8 @@ def extract_mentions(doc, onto) -> tuple[list[Mention], dict[int, str]]:
         if not _usable(key) or key in onto.concept_class:
             continue
         head = tokmap.get(root.i) if root.i in tokmap else None
-        mentions.append(Mention(key, chunk.text, sent_of[chunk.start], "noun_chunk", head=head))
+        mentions.append(Mention(key, clean_surface(chunk), sent_of[chunk.start], "noun_chunk",
+                                head=head, core_parts=sorted(onto_keys)))
         for t in chunk:
             tokmap.setdefault(t.i, key)
         tokmap[root.i] = key
@@ -362,7 +390,8 @@ def extract_relations(doc, tokmap) -> list[RawRelation]:
 
 
 # ---------------------------------------------------------------- 5. 本体阶段 + 6. 聚合
-def apply_ontology(mentions: list[Mention], raw: list[RawRelation], onto, n_sents: int) -> KnowledgeGraph:
+def apply_ontology(mentions: list[Mention], raw: list[RawRelation], onto,
+                   sentences: list[str]) -> KnowledgeGraph:
     concepts: dict[str, Concept] = {}
     surfaces: dict[str, Counter] = {}
     for m in mentions:
@@ -374,7 +403,7 @@ def apply_ontology(mentions: list[Mention], raw: list[RawRelation], onto, n_sent
             c = concepts[m.key] = Concept(
                 key=m.key, label=onto.concept_label.get(m.key, m.key),
                 cls=onto.concept_class.get(m.key, onto_mod.UNCLASSIFIED), in_ontology=in_onto,
-                head=m.head)
+                head=m.head, status="core" if in_onto else "emergent")
             surfaces[m.key] = Counter()
         c.count += 1
         surfaces[m.key][m.surface.strip()] += 1
@@ -382,19 +411,35 @@ def apply_ontology(mentions: list[Mention], raw: list[RawRelation], onto, n_sent
             c.sources.append(m.source)
         if m.ner_label and m.ner_label not in c.ner_labels:
             c.ner_labels.append(m.ner_label)
+        for k in m.core_parts:
+            if k not in c.core_parts:
+                c.core_parts.append(k)
+        sent = sentences[m.sent_idx] if m.sent_idx < len(sentences) else ""
+        if sent and sent not in c.examples and len(c.examples) < 2:
+            c.examples.append(sent)
     for key, cnt in surfaces.items():
         c = concepts[key]
         c.surface_forms = [s for s, _ in cnt.most_common()]
         if not c.in_ontology:
             c.label = c.surface_forms[0]          # 词表外概念用最常见的原文写法作展示名
 
-    agg: dict[tuple, Relation] = {}
+    typed = []
     for r in raw:
         if r.source not in concepts or r.target not in concepts:
             continue
         rtype = onto.relation_type(r.predicate) or onto_mod.UNTYPED
         if rtype == onto_mod.UNTYPED and not onto.keep_untyped_relations:
             continue
+        typed.append((r, rtype))
+
+    # emergent 概念的门槛:参与了关系,或被提到足够多次。未过门槛的不入图。
+    connected = {k for r, _ in typed for k in (r.source, r.target)}
+    for key in [k for k, c in concepts.items() if c.status == "emergent"]:
+        if key not in connected and concepts[key].count < onto.emergent_min_mentions:
+            del concepts[key]
+
+    agg: dict[tuple, Relation] = {}
+    for r, rtype in typed:
         k = (r.source, rtype, r.target, r.negated)
         rel = agg.get(k)
         if rel is None:
@@ -404,7 +449,7 @@ def apply_ontology(mentions: list[Mention], raw: list[RawRelation], onto, n_sent
                        (rel.stances, r.stance), (rel.evidence, r.sentence)):
             if v and v not in lst:
                 lst.append(v)
-    return KnowledgeGraph(concepts, list(agg.values()), onto.version, n_sents)
+    return KnowledgeGraph(concepts, list(agg.values()), onto.version, len(sentences))
 
 
 # ---------------------------------------------------------------- 入口
@@ -424,4 +469,4 @@ def build_graph(text: str, onto=None) -> KnowledgeGraph:
     doc = get_nlp()(preprocess(text))
     mentions, tokmap = extract_mentions(doc, onto)
     raw = extract_relations(doc, tokmap)
-    return apply_ontology(mentions, raw, onto, len(list(doc.sents)))
+    return apply_ontology(mentions, raw, onto, [s.text.strip() for s in doc.sents])

@@ -12,6 +12,9 @@
 agent 的发言来自它的材料,混进来就不是"受试者的知识"了;onboarding 是流程寒暄,搜索是另一种活动。
 
 何时触发构建由流程控制方决定(不在本模块范围内),调用 build_for_session(sid, stage) 即可。
+
+该主题有专家概念图(expert_maps/topic_<n>.yaml)时,构建后顺带对照打分,
+结果写在 Graph 节点上(覆盖率、命中的命题等),见 expert.py。
 """
 import hashlib
 from datetime import datetime, timezone
@@ -19,9 +22,9 @@ from datetime import datetime, timezone
 import database as db
 from materials import ROUNDS_PER_TOPIC
 
-from . import extract
+from . import expert, extract
 
-PIPELINE_VERSION = "kg-0.1.0"
+PIPELINE_VERSION = "kg-0.2.0"
 STAGES = ("recall", "phase1", "phase2", "phase3")
 DISCUSSION_STATES = ("debate", "summary")
 
@@ -66,7 +69,12 @@ def build_for_session(sid: str, stage: str, write: bool = True) -> dict:
     抛 NotReady 表示该阶段还没有文本,调用方可稍后重试。"""
     text, meta = load_stage_text(sid, stage)
     graph = extract.build_graph(text)
-    summary = {**meta, "concepts": len(graph.concepts), "relations": len(graph.relations)}
+    summary = {**meta, "concepts": len(graph.concepts), "relations": len(graph.relations),
+               "emergent": sum(1 for c in graph.concepts.values() if c.status == "emergent")}
+    emap = expert.load(meta["topic"], extract.get_ontology())
+    sc = expert.score(graph, emap, None if stage == "recall" else int(stage[-1])) if emap else None
+    if sc:
+        summary["score"] = sc
     if not write:
         return {**summary, "graph": graph.to_dict()}
 
@@ -81,7 +89,18 @@ def build_for_session(sid: str, stage: str, write: bool = True) -> dict:
         "pipeline_version": PIPELINE_VERSION,
         "spacy_model": extract.SPACY_MODEL,
         "built_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "emergent_count": summary["emergent"],
     }
+    if sc:
+        # Neo4j 属性只能是标量或标量列表,命题按状态拆成 id 列表
+        props.update(
+            coverage_rate=sc["coverage_rate"],
+            concepts_covered=sc["concepts_covered"],
+            concepts_missing=sc["concepts_missing"],
+            propositions_scored=sc["propositions_scored"],
+            **{f"propositions_{s}": [p["id"] for p in sc["propositions"] if p["status"] == s]
+               for s in expert.STATUS_ORDER},
+        )
     out = neo4j_store.write_graph(graph, f"{sid}:{stage}", props, participant=meta["participant"])
     return {**summary, **out}
 
@@ -93,5 +112,19 @@ def build_all(sid: str, write: bool = True) -> list[dict]:
         try:
             results.append(build_for_session(sid, stage, write=write))
         except NotReady as e:
+            results.append({"session_id": sid, "stage": stage, "skipped": str(e)})
+    return results
+
+
+def rebuild_existing() -> list[dict]:
+    """重建 Neo4j 里已有的每一张图。改了 ontology.yaml 或专家图之后用,
+    让新加进词表的概念在所有受试者的图里都变成 core、覆盖率按新图重算。"""
+    from . import neo4j_store
+    results = []
+    for sid, stage in neo4j_store.list_graphs():
+        try:
+            r = build_for_session(sid, stage)
+            results.append({k: r[k] for k in ("session_id", "stage", "concepts", "relations", "emergent")})
+        except (NotReady, ValueError) as e:
             results.append({"session_id": sid, "stage": stage, "skipped": str(e)})
     return results

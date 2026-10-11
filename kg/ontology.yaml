@@ -10,14 +10,21 @@
 #               带介词的谓词(rely_on)须整体登记;只登记 learn 不会让 learn_through 也命中。
 #
 # 词表初稿取自 materials/ 下两个主题的阅读材料,需研究团队审定后再扩充。
+# StudyConcept 类是专家概念图(kg/expert_maps/)里的必学概念,写法以阅读材料为准。
+#
+# 词表外的概念(emergent)也会入图,但要过质量门槛:中心词是名词、不是泛词/元话语词,
+# 且在这段文本里被提到至少 emergent_min_mentions 次或参与了某条关系。
+# 反复出现的 emergent 概念用 `python -m kg candidates` 列出,由研究者决定是否加进词表。
 
-version: "0.1.0"
+version: "0.2.0"
 
 policy:
   keep_unclassified_concepts: true   # false: 只保留词表内概念及其关系
   keep_untyped_relations: true       # false: 丢弃映射不到关系类型的边(RELATED_TO)
+  emergent_min_mentions: 2           # 词表外概念未参与任何关系时,至少被提到几次才入图
 
 classes:
+  StudyConcept:      required concepts from the expert concept maps (kg/expert_maps/)
   Technology:        AI systems, models and tools
   Intelligence:      kinds and properties of intelligence
   CognitiveProcess:  mental operations (memory, reasoning, retrieval ...)
@@ -28,6 +35,37 @@ classes:
   Agent:             human actors (learners, students, professionals ...)
 
 concepts:
+  # ---- StudyConcept: AI & Cognition (topic 2) expert map, rounds 1-3
+  cognitive_resources:
+    class: StudyConcept
+    terms: [cognitive resources, cognitive resource, cognitive capacity, cognitive load, mental energy,
+            mental effort, mental resources, effort, attention]
+  cognitive_offloading:
+    class: StudyConcept
+    terms: [cognitive offloading, offloading, offload]
+  cognitive_labor:
+    class: StudyConcept
+    terms: [cognitive labor, cognitive labour, cognitive work, mental work, mental labor, thinking work]
+  extended_mind:
+    class: StudyConcept
+    terms: [extended mind, extended cognition, extended mind thesis]
+  core_delegation:
+    class: StudyConcept
+    terms: [core delegation, central delegation, core step delegation]
+  peripheral_delegation:
+    class: StudyConcept
+    terms: [peripheral delegation, supporting delegation]
+  performance_reliance:
+    class: StudyConcept
+    terms: [performance reliance, performance dependence]
+  skill_reallocation:
+    class: StudyConcept
+    terms: [skill reallocation, skill reallocations, skills reallocation, reallocation of skills, skill shift]
+  independent_capability:
+    class: StudyConcept
+    terms: [independent capability, independent capabilities, independent ability, unaided ability,
+            unassisted ability]
+
   # ---- Technology
   ai:
     class: Technology
@@ -87,9 +125,6 @@ concepts:
   perception:
     class: CognitiveProcess
     terms: [perception]
-  cognitive_resources:
-    class: CognitiveProcess
-    terms: [cognitive resource, cognitive capacity, cognitive load, mental effort, effort, attention]
   knowledge_construction:
     class: CognitiveProcess
     terms: [knowledge construction, synthesis, integration, explanation, self-explanation]
@@ -118,9 +153,6 @@ concepts:
     terms: [performance, task performance, assisted performance, accuracy]
 
   # ---- Phenomenon
-  cognitive_offloading:
-    class: Phenomenon
-    terms: [cognitive offloading, offloading]
   cognitive_dependency:
     class: Phenomenon
     terms: [cognitive dependency, dependency, dependence, over-reliance, overreliance, reliance]
@@ -225,3 +257,15 @@ relations:
   SIMILAR_TO:
     description: source resembles or imitates target
     triggers: [similar_to, resemble, mimic, imitate, comparable_to, be_like]
+  AFFECTS:
+    description: source influences target without a stated direction ("feeds into")
+    triggers: [affect, influence, shape, impact, feed_into, feed, contribute_to, change]
+  REDISTRIBUTES:
+    description: source moves or divides target between the person and a tool
+    triggers: [redistribute, reallocate, distribute, divide, split, shift, move, transfer]
+  INTEGRATES_INTO:
+    description: source becomes part of target
+    triggers: [integrate_into, integrate_with, merge_into, merge_with, turn_into, evolve_into, develop_into]
+  CONCENTRATES_IN:
+    description: source gathers in target
+    triggers: [concentrate_in, concentrate_on, center_on, centre_on, focus_on, end_up_in]

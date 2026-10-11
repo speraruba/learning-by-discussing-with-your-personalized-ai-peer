@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 本体(ontology)加载与校验。本体内容在 ontology.yaml,这里只负责:
+(专家概念图在 expert_maps/,由 expert.py 加载。)
 - 校验结构(类别存在、关系类型名合法、同一写法不归属两个概念、同一触发词不归属两种关系);
 - 把概念同义写法按与正文相同的方式归一化,构造匹配用的词表;
 - 提供"谓词 → 关系类型"的映射。
@@ -34,6 +35,7 @@ class Ontology:
     triggers: dict[str, str] = field(default_factory=dict)            # 谓词 -> 关系类型
     keep_unclassified_concepts: bool = True
     keep_untyped_relations: bool = True
+    emergent_min_mentions: int = 2
 
     @property
     def max_term_len(self) -> int:
@@ -66,6 +68,7 @@ def load(path: str | Path | None = None, normalize_term=None) -> Ontology:
         concept_class={}, concept_label={},
         keep_unclassified_concepts=bool(policy.get("keep_unclassified_concepts", True)),
         keep_untyped_relations=bool(policy.get("keep_untyped_relations", True)),
+        emergent_min_mentions=int(policy.get("emergent_min_mentions", 2)),
     )
 
     for key, spec in (raw.get("concepts") or {}).items():

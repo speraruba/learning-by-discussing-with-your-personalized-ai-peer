@@ -55,6 +55,41 @@ preprocess → extract_mentions (NER) → normalize → extract_relations → ap
    - Predicates map to relation types (`REDUCES`, `DEPENDS_ON`, …). Unmapped predicates become `RELATED_TO`, and the original verb is kept.
    - `policy` in the YAML can drop unclassified concepts or untyped relations.
 
+### Core and emergent concepts
+
+Concepts in `ontology.yaml` are **core**. Anything else a participant talks about can still enter the graph as an **emergent** concept, so ideas outside our list are captured. To keep filler out, an emergent concept has to pass three checks:
+
+1. Its main word is a noun ("tweak", "refining" are dropped).
+2. It isn't a generic or meta-talk word ("thing", "topic", "vocabulary", "testing testing").
+3. The participant actually used it: it takes part in a relation, or it's mentioned at least `emergent_min_mentions` times (default 2). A word dropped once in passing doesn't count.
+
+Emergent concepts keep:
+- `core_parts`, the core concepts inside the phrase ("AI tutor" → `ai`)
+- up to two example sentences, for review
+
+Labels drop leading words like "the", "any", "how".
+
+**Growing the list.** `python -m kg candidates` lists emergent concepts across all participants, ranked by how many participants used them, with example sentences. A researcher adds the useful ones to `ontology.yaml`, then runs `python -m kg rebuild` so every stored graph is rebuilt with them as core. Nothing is added automatically.
+
+### Expert concept maps
+
+`kg/expert_maps/topic_<n>.yaml` holds a topic's expert map, copied from the reading material:
+- the required concepts per round
+- every statement, written as source → verb → target
+
+Topic 2 (AI & Cognition) is filled in. Topic 1 has no map yet, so its graphs are built but not scored.
+
+When a topic has a map, each build is scored against it:
+- **Concept coverage**: which required concepts the participant mentioned, overall and for the current round.
+- **Statements between two required concepts** (9 for topic 2). Each one gets a status:
+  - `matched`: the participant said it, in their own words (any relation type listed under `accept`)
+  - `negated`: the participant denied it
+  - `linked`: they connected the two concepts some other way
+  - `missing`: no connection between the two concepts
+- **Statements whose target is a description** ("a person's limited mental energy") are counted but not scored, because a graph can't check them edge by edge.
+
+`python -m kg report <session_id>` shows each stage's coverage, matched statements, and the required concepts that are new since the recall.
+
 ### Deliberate limits
 
 Where the pipeline isn't sure, it leaves the relation out.
@@ -63,6 +98,16 @@ Where the pipeline isn't sure, it leaves the relation out.
 - **Clausal objects are skipped** ("research shows that …").
 
 A larger spaCy model (`KG_SPACY_MODEL=en_core_web_trf`, a parser rather than an LLM) gives better parses of messy speech.
+
+### Why not a keyphrase package
+
+We ran YAKE and TextRank (pytextrank) on the same two transcripts as the pipeline:
+- **YAKE** ranked filler and fragments highly: "Testing", "Yeah", "split mental", "delegation leads".
+- **TextRank** gave a better ranking, but still kept off-topic phrases ("fuelful sentences", "the actual full study flow"). It also doesn't merge variants ("Offloading" and "offloading" are listed separately).
+
+Both packages only rank phrases. They don't normalize synonyms, extract relations, detect negation, or tell core concepts from emergent ones. So they would add a dependency without adding anything the pipeline needs.
+
+KeyBERT needs a sentence-embedding model download and wasn't tested.
 
 ## Ontology
 
@@ -76,12 +121,18 @@ A larger spaCy model (`KG_SPACY_MODEL=en_core_web_trf`, a parser rather than an 
 ```
 (:Participant {id})-[:HAS_GRAPH]->(:Graph {id: "<session_id>:<stage>", session_id, topic, stage, source,
                                           text_sha256, ontology_version, pipeline_version, spacy_model, built_at})
-(:Graph)-[:MENTIONS {count, surface_forms, sources, ner_labels}]->(:Concept {key, label, class, in_ontology, head})
+(:Graph)-[:MENTIONS {count, surface_forms, sources, ner_labels, examples}]->
+        (:Concept {key, label, class, status, in_ontology, head, core_parts})
 (:Concept)-[:REDUCES|DEPENDS_ON|… {graph_id, negated, count, predicates, modals, stances, evidence}]->(:Concept)
 ```
 
 - **Shared concepts.** `Concept` nodes are shared across all graphs, so the same idea can be compared across participants and stages. Which graph an edge belongs to is recorded in its `graph_id`.
 - **Idempotent rebuilds.** Rebuilding a stage replaces that graph's edges and mentions in a single transaction.
+- **Scores on the Graph node.** When the topic has an expert map, the Graph node also stores:
+  - `coverage_rate`
+  - `concepts_covered`, `concepts_missing`
+  - `propositions_matched`, `propositions_negated`, `propositions_linked`, `propositions_missing` (lists of statement ids)
+  - `emergent_count`
 
 Example query: everything participant P01 said reduces something, by stage.
 
@@ -104,9 +155,13 @@ $env:NEO4J_PASSWORD = "<password>"     # also NEO4J_URI / NEO4J_USER / NEO4J_DAT
 
 ```bash
 python -m kg text "AI reduces memory."          # print extraction as JSON; no databases
+python -m kg text --file t.txt --topic 2        # same, plus the expert-map score
 python -m kg build <session_id> recall          # one stage → Neo4j
 python -m kg build <session_id> phase2 --dry-run
 python -m kg build-all <session_id>             # every stage that has text
+python -m kg report <session_id>                # coverage and new concepts per stage
+python -m kg candidates --topic 2               # emergent concepts across participants
+python -m kg rebuild                            # rebuild every stored graph after editing the ontology
 ```
 
 ## Tests
