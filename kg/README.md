@@ -77,16 +77,28 @@ Labels drop leading words like "the", "any", "how".
 - the required concepts per round
 - every statement, written as source → verb → target
 
-Topic 2 (AI & Cognition) is filled in. Topic 1 has no map yet, so its graphs are built but not scored.
+Topic 2 (AI & Cognition) is copied from the reading material. Topic 1 (AGI) is a **draft** built from the older readings in `materials/article_1_*`, marked `draft: true`; scores for it carry `map_draft: true` until the research team replaces it with the official map.
 
 When a topic has a map, each build is scored against it:
 - **Concept coverage**: which required concepts the participant mentioned, overall and for the current round.
 - **Statements between two required concepts** (9 for topic 2). Each one gets a status:
   - `matched`: the participant said it, in their own words (any relation type listed under `accept`)
-  - `negated`: the participant denied it
+  - `negated`: the participant said the opposite (denied a statement, or affirmed one the material states as negative, like "the Turing Test does not measure understanding")
   - `linked`: they connected the two concepts some other way
-  - `missing`: no connection between the two concepts
-- **Statements whose target is a description** ("a person's limited mental energy") are counted but not scored, because a graph can't check them edge by edge.
+  - `similar`: no edge in the graph, but a sentence closely matches the statement (see below). This catches sentences the parser misreads.
+  - `missing`: none of the above
+- **Statements whose target is a description** ("a person's limited mental energy") can't be checked edge by edge, so they are checked by sentence similarity instead. Each gets `similar`, `not_found` (the concept came up but the statement wasn't said) or `not_mentioned`.
+
+#### Sentence similarity
+
+`kg/similarity.py` compares the participant's sentences with each statement. It only compares; it never generates text. Rules:
+
+1. Only sentences that mention the statement's concept are considered (for concept-to-concept statements, both concepts).
+2. The concept's own name is left out of the comparison, so every statement about one concept doesn't look alike.
+3. Each sentence counts for at most one statement: the one it is closest to.
+4. A score at or above the threshold counts as `similar`. The score and the sentence are stored for review.
+
+The default model is spaCy's `en_core_web_md` word vectors (threshold 0.70, calibrated on paraphrases of the topic 2 statements). Setting `KG_SIM_MODEL=sbert:all-MiniLM-L6-v2` (after `pip install sentence-transformers`) uses a sentence-embedding model instead, which handles close paraphrases better. That option downloads the model from Hugging Face on first use and hasn't been tested in this repo yet. `KG_SIM_THRESHOLD` overrides the threshold. If no model is installed, scoring still runs and reports `similarity: unavailable`.
 
 `python -m kg report <session_id>` shows each stage's coverage, matched statements, and the required concepts that are new since the recall.
 
@@ -147,6 +159,7 @@ RETURN g.stage, a.label, r.negated, b.label, r.evidence ORDER BY g.stage
 ```powershell
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
+python -m spacy download en_core_web_md      # word vectors for the similarity check
 docker run -d --name lp-neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/<password> neo4j:5-community
 $env:NEO4J_PASSWORD = "<password>"     # also NEO4J_URI / NEO4J_USER / NEO4J_DATABASE if not default
 ```

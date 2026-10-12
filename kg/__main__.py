@@ -64,7 +64,8 @@ def main(argv=None) -> int:
         out = graph.to_dict()
         if args.topic:
             emap = expert.load(args.topic, get_ontology())
-            out["score"] = expert.score(graph, emap) if emap else f"no expert map for topic {args.topic}"
+            out["score"] = (expert.score(graph, emap, text=text) if emap
+                            else f"no expert map for topic {args.topic}")
         _print(out)
         return 0
 

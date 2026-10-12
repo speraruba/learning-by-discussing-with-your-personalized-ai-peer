@@ -178,7 +178,8 @@ def session_report(session_id: str) -> list[dict]:
         "       g.emergent_count AS emergent, g.coverage_rate AS coverage_rate, "
         "       g.concepts_covered AS concepts_covered, g.propositions_matched AS matched, "
         "       g.propositions_negated AS negated, g.propositions_linked AS linked, "
-        "       g.propositions_scored AS scored "
+        "       g.propositions_similar AS similar, g.propositions_scored AS scored, "
+        "       g.definitions_similar AS definitions_similar, g.map_draft AS map_draft "
         "ORDER BY stage",
         sid=session_id,
     )

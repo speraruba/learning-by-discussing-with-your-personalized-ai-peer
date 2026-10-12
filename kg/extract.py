@@ -197,6 +197,14 @@ def preprocess(text: str) -> str:
 
 
 # ---------------------------------------------------------------- 2. NER + 3. 归一化
+_NOUN_SLOTS = {"dobj", "pobj", "nsubj", "nsubjpass", "attr"}
+
+
+def _nounish(tok) -> bool:
+    """名词,或处在名词位置(宾语/主语/表语)上的动名词。"""
+    return tok.pos_ in ("NOUN", "PROPN") or (tok.tag_ == "VBG" and tok.dep_ in _NOUN_SLOTS)
+
+
 def extract_mentions(doc, onto) -> tuple[list[Mention], dict[int, str]]:
     """返回 (mentions, token 下标 → 概念 key)。优先级:本体词表 > 命名实体 > 名词短语。
     本体优先是因为小模型的 NER 在本领域常错(会把 AI 标成地名 GPE、AGI 标成机构 ORG)。"""
@@ -206,6 +214,7 @@ def extract_mentions(doc, onto) -> tuple[list[Mention], dict[int, str]]:
 
     # 本体词表:同一句内最长匹配。窗口里至少要有一个名词,单个词必须本身是名词
     # (避免把动词 "test"、"I think" 的 think 当成概念)。
+    # 处在名词位置上的动名词也算名词:小模型常把 "measure understanding" 的 understanding 标成动词。
     maxlen = onto.max_term_len
     i, n = 0, len(doc)
     while i < n:
@@ -214,9 +223,9 @@ def extract_mentions(doc, onto) -> tuple[list[Mention], dict[int, str]]:
             span = doc[i:i + L]
             if sent_of[span[0].i] != sent_of[span[-1].i] or span[0].is_punct or span[-1].is_punct:
                 continue
-            if not any(t.pos_ in ("NOUN", "PROPN") for t in span):
+            if not any(_nounish(t) for t in span):
                 continue
-            if L == 1 and span[0].pos_ not in ("NOUN", "PROPN"):
+            if L == 1 and not _nounish(span[0]):
                 continue
             toks = [t for t in span if not t.is_punct or t.text == "-"]
             key = (onto.terms.get(tuple(_tok_form(t) for t in toks))

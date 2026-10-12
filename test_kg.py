@@ -88,7 +88,9 @@ check(g.concepts["learning"].status == "core", "ontology concept is core")
 from kg import expert                                    # noqa: E402
 emap = expert.load(2, onto)
 check(emap is not None and len(emap.required()) == 8 and len(emap.required(2)) == 2, "expert map loads")
-check(expert.load(1, onto) is None, "topic without expert map -> None")
+check(expert.load(99, onto) is None, "topic without expert map -> None")
+emap1 = expert.load(1, onto)
+check(emap1 is not None and emap1.draft and len(emap1.required()) == 8, "AGI draft map loads, flagged draft")
 
 def statuses(text, rnd=None):
     sc = expert.score(build_graph(text), emap, rnd)
@@ -104,6 +106,39 @@ check(sc["concepts_covered"] == ["core_delegation", "performance_reliance"] and 
 check(sc["round_concepts_missing"] == ["peripheral_delegation"], "per-round coverage")
 st, _ = statuses("Performance reliance comes from core delegation.")
 check(st["5.3"] == "linked", "connected differently -> linked")
+
+def statuses1(text):
+    return {p["id"]: p["status"] for p in expert.score(build_graph(text), emap1)["propositions"]}
+check(statuses1("The Turing test does not measure understanding.")["3.3"] == "matched",
+      "negative statement matched by a negative sentence")
+check(statuses1("The Turing test can measure understanding.")["3.3"] == "negated",
+      "negative statement contradicted by a positive sentence")
+
+# ---- 语义相似度(定义类命题 + 图上 missing 的兜底)
+from kg import similarity                                # noqa: E402
+text = ("Cognitive labor is the mental effort a task needs. Cognitive labor can be done by a person or by AI. "
+        "Extended mind is when a tool works like part of your brain. I like pizza and cognitive offloading is hard.")
+sc = expert.score(build_graph(text), emap, text=text)
+defs = {d["id"]: d for d in sc["definitions"]}
+check(defs["3.1"]["status"] == "similar" and defs["3.2"]["status"] == "similar", "paraphrased definitions -> similar")
+check(defs["3.1"]["evidence"] == ["Cognitive labor is the mental effort a task needs."], "similarity keeps evidence")
+check(defs["4.1"]["status"] == "similar", "analogy paraphrase -> similar")
+check(defs["2.1"]["status"] == "not_found", "concept mentioned but statement not said -> not_found")
+check(defs["7.1"]["status"] == "not_mentioned", "concept never mentioned -> not_mentioned")
+check(sc["definition_counts"]["similar"] == 3, "one sentence counts for one statement only")
+
+text1 = "Behavioral evaluation measures AGI."
+sc1 = expert.score(build_graph(text1), emap1, text=text1)
+check({p["id"]: p["status"] for p in sc1["propositions"]}["2.3"] == "similar",
+      "misparsed link statement caught by similarity")
+check(sc1["map_draft"] is True, "score flags draft map")
+
+_saved = (similarity.SIM_MODEL, similarity._backend)
+similarity.SIM_MODEL, similarity._backend = "no_such_model_xyz", None
+sc_na = expert.score(build_graph(text), emap, text=text)
+similarity.SIM_MODEL, similarity._backend = _saved
+check(sc_na["similarity"].startswith("unavailable") and "definitions" not in sc_na,
+      "missing similarity model -> scoring still works")
 
 # ---------------------------------------------------------------- 2. 端到端
 if not os.environ.get("NEO4J_PASSWORD"):
@@ -166,17 +201,20 @@ s2 = db.create_session("KG001", topic=2, phase=4)
 sid2 = s2["id"]
 rid2, up2 = db.add_free_recall(sid2, 2, f"{sid2}/baseline.webm", 100)
 db.set_free_recall_transcript(rid2, up2, "Core delegation leads to performance reliance. "
-                              "AI tutors help students. Calculators are old. Calculators are everywhere.")
+                              "AI tutors help students. Calculators are old. Calculators are everywhere. "
+                              "Cognitive labor is the mental effort a task needs.")
 out = pipeline.build_for_session(sid2, "recall")
 check(out["score"]["proposition_counts"]["matched"] == 1, "build returns expert-map score")
 g2 = q("MATCH (g:Graph {id:$g}) RETURN g.coverage_rate AS cr, g.propositions_matched AS pm, "
        "g.emergent_count AS ec", g=f"{sid2}:recall")[0]
-check(g2 == {"cr": 0.25, "pm": ["5.3"], "ec": 2}, f"score stored on graph node {g2}")
+check(g2 == {"cr": 0.5, "pm": ["5.3"], "ec": 2}, f"score stored on graph node {g2}")
+check(q("MATCH (g:Graph {id:$g}) RETURN g.definitions_similar AS d", g=f"{sid2}:recall")[0]["d"] == ["3.1"],
+      "similar definitions stored on graph node")
 cands = {c["key"]: c for c in neo4j_store.emergent_candidates(topic=2)}
 check({"ai tutor", "calculator"} <= set(cands) and cands["ai tutor"]["participants"] == 1
       and cands["ai tutor"]["examples"] == ["AI tutors help students."], "emergent candidates report")
 rep = {x["stage"]: x for x in neo4j_store.session_report(sid2)}
-check(rep["recall"]["matched"] == ["5.3"] and rep["recall"]["relations"] == 2, "session report")
+check(rep["recall"]["matched"] == ["5.3"] and rep["recall"]["relations"] == 3, "session report")
 
 for s_ in (sid, sid2):
     for stage in pipeline.STAGES:

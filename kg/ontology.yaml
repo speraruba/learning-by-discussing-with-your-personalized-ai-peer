@@ -16,7 +16,7 @@
 # 且在这段文本里被提到至少 emergent_min_mentions 次或参与了某条关系。
 # 反复出现的 emergent 概念用 `python -m kg candidates` 列出,由研究者决定是否加进词表。
 
-version: "0.2.0"
+version: "0.3.0"
 
 policy:
   keep_unclassified_concepts: true   # false: 只保留词表内概念及其关系
@@ -65,6 +65,28 @@ concepts:
     class: StudyConcept
     terms: [independent capability, independent capabilities, independent ability, unaided ability,
             unassisted ability]
+
+  # ---- StudyConcept: AGI (topic 1) draft expert map; agi / turing_test / understanding /
+  #      next_token_prediction are defined in their own classes below
+  behavioral_evaluation:
+    class: StudyConcept
+    terms: [behavioral evaluation, behavioural evaluation, behavioral test, behavioral assessment,
+            observable behavior, observable behaviour, observable performance, demonstrated capability,
+            demonstrated capabilities]
+  world_model:
+    class: StudyConcept
+    terms: [world model, world models, internal representation, internal representations, internal model]
+  experiential_learning:
+    class: StudyConcept
+    terms: [experiential learning, lived experience, direct experience, learning from experience,
+            real-world experience, embodied learning, embodied experience]
+  broad_competence:
+    class: StudyConcept
+    terms: [broad competence, general competence, breadth, broad capability, broad capabilities,
+            flexible reasoning, generality]
+  intelligence_attribution:
+    class: StudyConcept
+    terms: [intelligence attribution, attribution of intelligence, AGI claim, claim of AGI]
 
   # ---- Technology
   ai:
@@ -220,7 +242,7 @@ relations:
     triggers: [reduce, decrease, weaken, hinder, impair, undermine, erode, lower, diminish, harm, hurt, limit, interfere_with, damage, decline]
   CAUSES:
     description: source brings about target
-    triggers: [cause, create, produce, lead_to, result_in, trigger, encourage, drive, generate]
+    triggers: [cause, create, produce, lead_to, result_in, trigger, encourage, drive, generate, enable]
   REPLACES:
     description: source substitutes for or removes target
     triggers: [replace, substitute, bypass, eliminate, remove, take_over, skip]
@@ -229,7 +251,7 @@ relations:
     triggers: [depend_on, rely_on, require, need, use, utilize, dependent_on, reliant_on]
   MEASURES:
     description: source evaluates target
-    triggers: [measure, assess, evaluate, test, determine]
+    triggers: [measure, assess, evaluate, test, determine, judge]
   INCLUDES:
     description: source has target as a part or component
     triggers: [include, involve, contain, comprise, consist_of, have]

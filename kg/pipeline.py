@@ -72,7 +72,7 @@ def build_for_session(sid: str, stage: str, write: bool = True) -> dict:
     summary = {**meta, "concepts": len(graph.concepts), "relations": len(graph.relations),
                "emergent": sum(1 for c in graph.concepts.values() if c.status == "emergent")}
     emap = expert.load(meta["topic"], extract.get_ontology())
-    sc = expert.score(graph, emap, None if stage == "recall" else int(stage[-1])) if emap else None
+    sc = expert.score(graph, emap, None if stage == "recall" else int(stage[-1]), text=text) if emap else None
     if sc:
         summary["score"] = sc
     if not write:
@@ -98,9 +98,12 @@ def build_for_session(sid: str, stage: str, write: bool = True) -> dict:
             concepts_covered=sc["concepts_covered"],
             concepts_missing=sc["concepts_missing"],
             propositions_scored=sc["propositions_scored"],
+            map_draft=sc["map_draft"],
             **{f"propositions_{s}": [p["id"] for p in sc["propositions"] if p["status"] == s]
                for s in expert.STATUS_ORDER},
         )
+        if "definitions" in sc:
+            props["definitions_similar"] = [d["id"] for d in sc["definitions"] if d["status"] == "similar"]
     out = neo4j_store.write_graph(graph, f"{sid}:{stage}", props, participant=meta["participant"])
     return {**summary, **out}
 
