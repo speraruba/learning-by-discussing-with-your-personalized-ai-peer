@@ -19,7 +19,7 @@ end-search 开启下一轮讨论,或(第 3/6 轮后)进入休息页/考试页。
 import json
 import re
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -27,6 +27,7 @@ from pathlib import Path
 
 import database as db
 import agent
+import transcribe
 from materials import (PHASES, CONFLICTS_REQUIRED, TOPICS, ROUNDS_PER_TOPIC,
                        TOTAL_TOPICS, EXAM_QUESTIONS, article_for)
 
@@ -617,6 +618,89 @@ def end_rest(sid: str):
                    f"Rest finished; new session for Topic {topic_of(new_phase)}; entering reading stage")
     db.update_session(sid, state="done")      # 主题 1 会话收尾
     return session_view(s2)
+
+
+# ---------------------------------------------------------------- 自由回忆录音
+# 受试者口述回忆 -> 浏览器 MediaRecorder 录音 -> 上传落盘 -> 本地 Whisper 转写 -> 入库。
+# 音频不出本机(不调用外部转写 API)。转写在后台线程进行,前端轮询 GET 取结果。
+RECORDINGS_DIR = Path(__file__).parent / "recordings"
+RECALL_KINDS = ("baseline", "post")
+MAX_RECALL_BYTES = 50 * 1024 * 1024          # 约 50MB,远超正常回忆时长所需
+_AUDIO_EXTS = {
+    "audio/webm": ".webm", "audio/ogg": ".ogg",
+    "audio/mp4": ".m4a", "audio/mpeg": ".mp3", "audio/wav": ".wav",
+}
+
+
+def _transcribe_recall(recall_id: int, uploaded_at, abs_path: str):
+    """后台任务:转写并回写 transcript。失败只记状态,不影响受试者继续实验。
+    uploaded_at 标识本任务对应的那次上传;期间若有新上传,本任务的回写不生效。"""
+    try:
+        db.set_free_recall_status(recall_id, uploaded_at, "transcribing")
+        text = transcribe.transcribe_file(abs_path)
+        db.set_free_recall_transcript(recall_id, uploaded_at, text)
+    except Exception as e:                    # noqa: BLE001 - 转写失败需完整记录原因
+        db.set_free_recall_status(recall_id, uploaded_at, "failed", str(e))
+
+
+def _recall_view(row: dict | None) -> dict | None:
+    """对外视图:不暴露服务器磁盘路径。"""
+    if not row:
+        return None
+    return {
+        "id": row["id"], "kind": row["kind"], "topic": row["topic"],
+        "status": row["status"], "transcript": row["transcript"],
+        "audio_bytes": row["audio_bytes"], "error": row["error"],
+    }
+
+
+@app.post("/api/session/{sid}/recall")
+def upload_recall(sid: str, background: BackgroundTasks,
+                  kind: str = "baseline", audio: UploadFile = File(...)):
+    """上传一段自由回忆录音。同一 (session, kind) 重复上传会覆盖,幂等。"""
+    s = _require(sid)
+    if kind not in RECALL_KINDS:
+        raise HTTPException(400, f"kind must be one of {RECALL_KINDS}")
+
+    data = audio.file.read(MAX_RECALL_BYTES + 1)     # 多读 1 字节即可判断超限,不把超大文件整个读进内存
+    if not data:
+        raise HTTPException(400, "empty audio upload")
+    if len(data) > MAX_RECALL_BYTES:
+        raise HTTPException(413, "audio file too large")
+
+    ext = _AUDIO_EXTS.get((audio.content_type or "").split(";")[0].strip(), ".webm")
+    session_dir = RECORDINGS_DIR / sid
+    session_dir.mkdir(parents=True, exist_ok=True)
+    rel_path = f"{sid}/{kind}{ext}"
+    (RECORDINGS_DIR / rel_path).write_bytes(data)
+
+    recall_id, uploaded_at = db.add_free_recall(sid, topic_of(s["phase"]), rel_path, len(data), kind)
+    background.add_task(_transcribe_recall, recall_id, uploaded_at, str(RECORDINGS_DIR / rel_path))
+    return {"id": recall_id, "kind": kind, "status": "uploaded", "audio_bytes": len(data)}
+
+
+@app.get("/api/session/{sid}/recall")
+def get_recall(sid: str, kind: str = "baseline"):
+    """轮询转写结果。status: uploaded|transcribing|done|failed。"""
+    _require(sid)
+    row = db.get_free_recall(sid, kind)
+    if not row:
+        raise HTTPException(404, "no recall recorded for this session")
+    return _recall_view(row)
+
+
+@app.post("/api/session/{sid}/recall/retranscribe")
+def retranscribe_recall(sid: str, background: BackgroundTasks, kind: str = "baseline"):
+    """重跑转写:服务重启丢了后台任务,或换模型后想重新生成时使用。音频仍在磁盘上。"""
+    _require(sid)
+    row = db.get_free_recall(sid, kind)
+    if not row:
+        raise HTTPException(404, "no recall recorded for this session")
+    abs_path = RECORDINGS_DIR / row["audio_path"]
+    if not abs_path.exists():
+        raise HTTPException(409, "audio file is missing on disk")
+    background.add_task(_transcribe_recall, row["id"], row["uploaded_at"], str(abs_path))
+    return {"id": row["id"], "kind": kind, "status": "transcribing"}
 
 
 class ExamReq(BaseModel):

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free Recall Recorder — dev harness</title>
+<!--
+  开发自测页,不属于受试者流程。
+  用途:不跑完整实验也能验证录音 -> 上传 -> 本地转写 -> 入库这条链路。
+  用法:先在主流程里拿到一个 session id(浏览器 devtools 或数据库里查),填入下方。
+-->
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666666;
+    --line: #d4d4d4;
+    --panel: #fafafa;
+    --field: #ffffff;
+    --btn-bg: #f0f0f0;
+    --btn-fg: #1a1a1a;
+    --accent: #2f6feb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1e;
+      --fg: #ececec;
+      --muted: #9a9a9a;
+      --line: #3a3a3c;
+      --panel: #262628;
+      --field: #2c2c2e;
+      --btn-bg: #3a3a3c;
+      --btn-fg: #ececec;
+      --accent: #5b9bff;
+    }
+  }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    max-width: 640px; margin: 48px auto; padding: 0 20px;
+    line-height: 1.6; background: var(--bg); color: var(--fg);
+  }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .note { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 4px; }
+  input {
+    width: 100%; padding: 9px 11px; font-size: 14px; font-family: inherit;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: var(--field); color: var(--fg);
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+
+  button {
+    padding: 9px 16px; font-size: 14px; font-family: inherit; font-weight: 500;
+    border-radius: 6px; border: 1px solid var(--line);
+    background: var(--btn-bg); color: var(--btn-fg);
+    cursor: pointer; margin-right: 8px;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .4; cursor: default; }
+
+  #box {
+    margin-top: 28px; padding: 20px;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+  }
+  .recallStatus { font-weight: 600; margin-bottom: 6px; }
+  .recallTimer {
+    font-variant-numeric: tabular-nums; font-size: 30px;
+    margin-bottom: 16px; color: var(--muted);
+  }
+  .recallControls { margin-bottom: 14px; }
+  .recallTranscript {
+    margin-top: 16px; padding: 12px; font-size: 14px; line-height: 1.7;
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 6px; white-space: pre-wrap;
+  }
+  audio { width: 100%; margin-top: 10px; }
+</style>
+</head>
+<body>
+  <h1>Free Recall Recorder</h1>
+  <p class="note">Development harness. Not part of the participant flow.</p>
+
+  <label for="sid">Session ID</label>
+  <input id="sid" placeholder="e.g. 3f2a9c1e...">
+
+  <label for="kind">Kind</label>
+  <input id="kind" value="baseline">
+
+  <p><button id="mount">Mount recorder</button></p>
+
+  <div id="box"></div>
+
+  <script src="/static/recall.js"></script>
+  <script>
+    document.getElementById('mount').addEventListener('click', function () {
+      var sid = document.getElementById('sid').value.trim();
+      if (!sid) { alert('Enter a session ID first.'); return; }
+      mountRecallRecorder(document.getElementById('box'), {
+        sessionId: sid,
+        kind: document.getElementById('kind').value.trim() || 'baseline',
+        onDone: function (row) { console.log('recall done:', row); }
+      });
+      this.disabled = true;
+    });
+  </script>
+</body>
+</html>
