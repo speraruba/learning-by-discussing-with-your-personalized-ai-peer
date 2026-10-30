@@ -1,6 +1,13 @@
 # Knowledge-graph pipeline (`kg/`)
 
-This pipeline turns a participant's own words into a concept graph in Neo4j. It uses **traditional NLP only**: spaCy part-of-speech tags, dependency parses and NER, plus rules. It makes no LLM calls. Every relation comes from a real grammatical structure in the text and stores the source sentence as evidence, so the pipeline cannot invent relations.
+This pipeline turns a participant's own words into a concept graph in Neo4j and scores it against the expert concept map.
+
+It tracks two things (team decision, 2026-10-23):
+
+1. **Prepared statements**, the ones we want participants to learn. Checked with **traditional NLP**: spaCy part-of-speech tags, dependency parses and NER, plus rules and sentence similarity. No LLM is involved.
+2. **New ideas**, statements participants come up with that aren't prepared. Rules catch some of these, and an **LLM** (optional, `--llm`) extracts the rest.
+
+Every relation stores the participant's sentence as evidence. LLM output is kept only if its quoted evidence appears word for word in what the participant said.
 
 ## Where graphs come from
 
@@ -102,6 +109,34 @@ The default model is spaCy's `en_core_web_md` word vectors (threshold 0.70, cali
 
 `python -m kg report <session_id>` shows each stage's coverage, matched statements, and the required concepts that are new since the recall.
 
+### LLM steps (optional)
+
+Turn them on with `--llm` or `KG_LLM=1`. They use the study's existing OpenAI settings (`OPENAI_API_KEY`, `OPENAI_MODEL`); set `KG_LLM_MODEL` to use a different model here. Without a key, both steps are skipped and scoring runs as before.
+
+- **New ideas** (`llm.extract_new`): the LLM is given the participant's text, the prepared statements (so it skips them), the concept list and the relation types.
+  - It returns source → relation → target statements, each with a word-for-word quote.
+  - Statements whose quote isn't in the text are dropped and counted. Ones that restate a prepared statement are skipped.
+  - Concepts are mapped through the synonym list; anything else becomes an emergent concept.
+  - The statements are stored as edges with `extractor: "llm"`.
+- **Missed-statement check** (`llm.judge_prepared`): prepared statements that neither the graph nor the similarity check found are given to the LLM, which says `said`, `denied` or `not_said` with a quote. The result is recorded as `llm_matched` / `llm_negated` (or `llm_said` / `llm_denied` for definitions), so it stays separate from what the rules found.
+
+Every edge in Neo4j now carries:
+- `extractor`: `rules` or `llm`
+- `prepared_id`: the prepared statement it corresponds to, or `null` if it's a new idea
+
+**Changing their mind:** when a participant both says and denies a prepared statement, the later sentence decides the status.
+
+### Comparing approaches
+
+`kg/eval/topic_2.yaml` has 27 labeled example sentences. They cover paraphrases, denials, changing one's mind, pronouns and new ideas, and they were written to resemble recall speech. They are **not** participant data.
+
+`python -m kg evaluate --topic 2 [--llm] [--details]` scores each setup on them:
+- precision and recall for "said" and "denied"
+- false credits
+- how many labeled new ideas each setup found, and how much noise it reports
+
+Add pilot transcripts to this file once we have them.
+
 ### Deliberate limits
 
 Where the pipeline isn't sure, it leaves the relation out.
@@ -175,6 +210,8 @@ python -m kg build-all <session_id>             # every stage that has text
 python -m kg report <session_id>                # coverage and new concepts per stage
 python -m kg candidates --topic 2               # emergent concepts across participants
 python -m kg rebuild                            # rebuild every stored graph after editing the ontology
+python -m kg evaluate --topic 2 --llm --details # compare rules vs LLM on the labeled test set
+# add --llm to text / build / build-all (or set KG_LLM=1) to use the LLM steps
 ```
 
 ## Tests

@@ -6,7 +6,9 @@
   (:Participant {id})-[:HAS_GRAPH]->(:Graph {id, session_id, topic, stage, ...})
   (:Graph)-[:MENTIONS {count, surface_forms, sources, ner_labels, examples}]->
       (:Concept {key, label, class, status, core_parts, ...})      status: core | emergent
-  (:Concept)-[:<关系类型> {graph_id, negated, count, predicates, modals, stances, evidence}]->(:Concept)
+  (:Concept)-[:<关系类型> {graph_id, negated, count, predicates, modals, stances, evidence,
+                          extractor, prepared_id}]->(:Concept)
+      extractor: rules | llm;prepared_id 为对应的预设命题 id,null 表示受试者自己提出的新命题
 
 - Concept 节点全局共享(同一个 key 只有一个节点),方便跨受试者/跨阶段比较;
   每张图"有哪些概念"由 MENTIONS 表示,"有哪些关系"由边上的 graph_id 区分。
@@ -106,7 +108,8 @@ def _write_tx(tx, graph_id: str, props: dict, participant: str | None,
             f"CREATE (a)-[x:`{rtype}`]->(b) "
             "SET x.graph_id = $gid, x.negated = r.negated, x.count = r.count, "
             "    x.predicates = r.predicates, x.modals = r.modals, "
-            "    x.stances = r.stances, x.evidence = r.evidence",
+            "    x.stances = r.stances, x.evidence = r.evidence, "
+            "    x.extractor = r.extractor, x.prepared_id = r.prepared_id",
             gid=graph_id, rels=rels,
         ).consume()
 
@@ -125,7 +128,7 @@ def write_graph(graph, graph_id: str, props: dict, participant: str | None = Non
         rels_by_type[r.type].append({
             "source": r.source, "target": r.target, "negated": r.negated, "count": r.count,
             "predicates": r.predicates, "modals": r.modals, "stances": r.stances,
-            "evidence": r.evidence,
+            "evidence": r.evidence, "extractor": r.extractor, "prepared_id": r.prepared_id,
         })
     props = {k: v for k, v in props.items() if v is not None}
     with driver().session(database=NEO4J_DATABASE) as s:

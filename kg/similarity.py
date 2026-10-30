@@ -78,9 +78,10 @@ def _cos(a, b) -> float:
     return float(np.dot(a, b)) if a is not None and b is not None else 0.0
 
 
-def match(text: str, emap, onto, props) -> dict[str, dict]:
+def match(text: str, emap, onto, props, exclude=()) -> dict[str, dict]:
     """返回 {命题 id: {status, score, evidence}};status 为 similar | not_found | not_mentioned。
-    props 是要核对的命题(expert.Proposition 列表)。"""
+    props 是要核对的命题(expert.Proposition 列表)。
+    exclude:已经被图上核对用作某条命题证据的句子,不再拿来做相似度(一句只算一条命题)。"""
     doc = extract.get_nlp()(extract.preprocess(text))
     sents = [s.text.strip() for s in doc.sents]
     mentions, _ = extract.extract_mentions(doc, onto)
@@ -102,7 +103,8 @@ def match(text: str, emap, onto, props) -> dict[str, dict]:
     for p in props:
         if sents_of.get(p.source):
             results[p.id]["status"] = "not_found"
-    cand = sorted({i for p in props for i in sents_of.get(p.source, ())})
+    excluded = {s.strip() for s in exclude}
+    cand = sorted({i for p in props for i in sents_of.get(p.source, ()) if sents[i] not in excluded})
     if not cand:
         return results
     stmt_vecs = dict(zip([p.id for p in props], _embed([p.statement for p in props], drop)))

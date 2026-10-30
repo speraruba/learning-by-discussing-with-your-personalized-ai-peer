@@ -9,6 +9,8 @@
   python -m kg report <session_id>            # 该会话各阶段的覆盖率、命题、新增概念
   python -m kg candidates [--topic 2]         # 跨受试者的词表外概念,供研究者审定
   python -m kg rebuild                        # 改了 ontology.yaml / 专家图后,重建库里所有图
+  python -m kg evaluate --topic 2 [--llm]     # 在标注测试集上比较规则 / LLM 几种做法
+  加 --llm(text / build / build-all)或设 KG_LLM=1:用 LLM 抽新命题、核对没找到的预设命题
 """
 import argparse
 import json
@@ -29,15 +31,18 @@ def main(argv=None) -> int:
     t.add_argument("text", nargs="?")
     t.add_argument("--file")
     t.add_argument("--topic", type=int, help="also score against this topic's expert map")
+    t.add_argument("--llm", action="store_true", help="use the LLM for new ideas and a check on missed statements")
 
     b = sub.add_parser("build", help="build one stage of a session into Neo4j")
     b.add_argument("session_id")
     b.add_argument("stage", choices=STAGE_ORDER)
     b.add_argument("--dry-run", action="store_true", help="extract only; do not write to Neo4j")
+    b.add_argument("--llm", action="store_true", default=None)
 
     a = sub.add_parser("build-all", help="build every ready stage of a session")
     a.add_argument("session_id")
     a.add_argument("--dry-run", action="store_true")
+    a.add_argument("--llm", action="store_true", default=None)
 
     r = sub.add_parser("report", help="coverage and new concepts per stage for one session")
     r.add_argument("session_id")
@@ -48,11 +53,20 @@ def main(argv=None) -> int:
 
     sub.add_parser("rebuild", help="rebuild every graph in Neo4j (after editing the ontology)")
 
+    e = sub.add_parser("evaluate", help="compare approaches on the labeled test set")
+    e.add_argument("--topic", type=int, default=2)
+    e.add_argument("--llm", action="store_true", help="include the LLM setups (needs OPENAI_API_KEY)")
+    e.add_argument("--details", action="store_true", help="list every mistake")
+
     args = ap.parse_args(argv)
 
+    if args.cmd == "evaluate":
+        from . import evaluate
+        print(evaluate.format_report(evaluate.evaluate(args.topic, use_llm=args.llm), details=args.details))
+        return 0
+
     if args.cmd == "text":
-        from . import expert
-        from .extract import build_graph, get_ontology
+        from . import analyze
         if args.file:
             with open(args.file, encoding="utf-8") as f:
                 text = f.read()
@@ -60,12 +74,12 @@ def main(argv=None) -> int:
             text = args.text
         else:
             text = sys.stdin.read()
-        graph = build_graph(text)
-        out = graph.to_dict()
+        res = analyze.analyze(text, args.topic, llm_check=args.llm, llm_new=args.llm)
+        out = res["graph"].to_dict()
         if args.topic:
-            emap = expert.load(args.topic, get_ontology())
-            out["score"] = (expert.score(graph, emap, text=text) if emap
-                            else f"no expert map for topic {args.topic}")
+            out["score"] = res["score"] if res["score"] else f"no expert map for topic {args.topic}"
+        if res["llm_new"] is not None:
+            out["llm_new"] = res["llm_new"]
         _print(out)
         return 0
 
@@ -90,9 +104,10 @@ def main(argv=None) -> int:
     from . import pipeline
     try:
         if args.cmd == "build":
-            out = pipeline.build_for_session(args.session_id, args.stage, write=not args.dry_run)
+            out = pipeline.build_for_session(args.session_id, args.stage, write=not args.dry_run,
+                                             use_llm=args.llm)
         elif args.cmd == "build-all":
-            out = pipeline.build_all(args.session_id, write=not args.dry_run)
+            out = pipeline.build_all(args.session_id, write=not args.dry_run, use_llm=args.llm)
         else:
             out = pipeline.rebuild_existing()
     except pipeline.NotReady as e:

@@ -97,9 +97,11 @@ def statuses(text, rnd=None):
     return {p["id"]: p["status"] for p in sc["propositions"]}, sc
 
 st, sc = statuses("Core delegation leads to performance reliance. "
-                  "I don't think performance reliance improves independent capability.", rnd=2)
+                  "I don't think independent capability can reveal performance reliance.", rnd=2)
 check(st["5.3"] == "matched", "proposition matched in participant's own words")
 check(st["7.3"] == "negated", "denied proposition marked negated")
+check(statuses("Independent capability can reveal performance reliance.")[0]["7.3"] == "matched",
+      "revised statement 7.3 (independent capability reveals performance reliance)")
 check(st["1.3"] == "missing", "unstated proposition missing")
 check(sc["concepts_covered"] == ["core_delegation", "performance_reliance"] and sc["coverage_rate"] == 0.25,
       "coverage excludes non-required endpoint concept")
@@ -139,6 +141,85 @@ sc_na = expert.score(build_graph(text), emap, text=text)
 similarity.SIM_MODEL, similarity._backend = _saved
 check(sc_na["similarity"].startswith("unavailable") and "definitions" not in sc_na,
       "missing similarity model -> scoring still works")
+
+# ---- 改口:以最后的立场为准
+st, _ = statuses("At first I thought core delegation causes performance reliance. "
+                 "But actually I don't think core delegation causes performance reliance.")
+check(st["5.3"] == "negated", "changed mind -> final position (denied) wins")
+st, _ = statuses("I don't think core delegation causes performance reliance. "
+                 "Actually, core delegation does cause performance reliance.")
+check(st["5.3"] == "matched", "changed mind the other way -> final position (said) wins")
+
+# ---- LLM(用假客户端;真实调用需要 OPENAI_API_KEY)
+import json as _json                                     # noqa: E402
+from types import SimpleNamespace as _NS                 # noqa: E402
+from kg import llm, analyze as an                        # noqa: E402
+
+class FakeLLM:
+    def __init__(self, extract=None, judge=None):
+        self.extract, self.judge, self.calls = extract or [], judge or [], []
+        self.chat = _NS(completions=_NS(create=self._create))
+    def _create(self, model, messages, response_format):
+        self.calls.append(messages)
+        body = ({"statements": self.extract} if messages[0]["content"].startswith("You extract")
+                else {"results": self.judge})
+        return _NS(choices=[_NS(message=_NS(content=_json.dumps(body)))])
+
+text_llm = ("AI tutors make students lazy because they never struggle. "
+            "Core delegation leads to performance reliance. "
+            "If you take the AI away, you can see how dependent someone was.")
+fake = FakeLLM(
+    extract=[
+        {"source": "AI tutors", "relation": "CAUSES", "target": "laziness", "negated": False,
+         "stance": "asserted", "evidence": "AI tutors make students lazy"},
+        {"source": "AI tutors", "relation": "REDUCES", "target": "creativity", "negated": False,
+         "stance": "asserted", "evidence": "AI tutors destroy creativity"},             # 原文里没有:应丢弃
+        {"source": "core delegation", "relation": "CAUSES", "target": "performance reliance",
+         "negated": False, "stance": "asserted", "evidence": "Core delegation leads to performance reliance"},
+        {"source": "students", "relation": "MADE_UP_TYPE", "target": "struggle", "negated": True,
+         "stance": "asserted", "evidence": "they never struggle"},
+    ],
+    judge=[
+        {"id": "7.3", "status": "said", "evidence": "If you take the AI away, you can see how dependent someone was"},
+        {"id": "1.3", "status": "said", "evidence": "cognitive resources lead to offloading"},  # 原文里没有
+    ])
+llm.set_client(fake)
+res = an.analyze(text_llm, 2, llm_check=True, llm_new=True)
+new = res["llm_new"]
+check(new["dropped_unverified"] == 1, "LLM statement with made-up evidence is dropped")
+pairs = {(x["source"], x["target"]) for x in new["statements"]}
+check(("ai tutor", "laziness") in pairs, "LLM new statement mapped to concept keys")
+check(("core_delegation", "performance_reliance") not in pairs, "LLM restating a prepared statement is skipped")
+check(any(x["source"] == "learner" and x["relation"] == "RELATED_TO" and x["negated"] for x in new["statements"]),
+      "unknown relation type -> RELATED_TO; listed concept matched by synonym")
+llm_edges = [r for r in res["graph"].relations if r.extractor == "llm"]
+check(llm_edges and all(r.prepared_id is None for r in llm_edges), "LLM edges stored as new statements")
+check(res["graph"].concepts["laziness"].status == "emergent", "LLM adds missing concepts as emergent")
+rule_edge = next(r for r in res["graph"].relations if r.extractor == "rules" and r.source == "core_delegation")
+check(rule_edge.prepared_id == "5.3", "rule edge labeled with its prepared statement id")
+st_llm = {p["id"]: p["status"] for p in res["score"]["propositions"]}
+check(st_llm["7.3"] == "llm_matched" and st_llm["5.3"] == "matched", "LLM check fills in missed prepared statement")
+check(st_llm["1.3"] == "missing", "LLM check with made-up evidence is ignored")
+judge_call = next(c for c in fake.calls if c[0]["content"].startswith("You check"))
+asked = judge_call[1]["content"].split("Participant")[0]
+check("5.3:" not in asked and "7.3:" in asked, "LLM check only asked about statements the rules missed")
+
+llm.set_client(None)
+_key = os.environ.pop("OPENAI_API_KEY", None)
+res_na = an.analyze(text_llm, 2, llm_check=True, llm_new=True)
+check(res_na["llm_new"]["unavailable"] and res_na["score"]["llm_check"].startswith("unavailable"),
+      "no API key -> LLM steps skipped, scoring still works")
+if _key:
+    os.environ["OPENAI_API_KEY"] = _key
+
+from kg import evaluate as ev                            # noqa: E402
+rep = ev.evaluate(2)
+check(rep["items"] >= 20 and rep["prepared"]["rules"]["said"]["precision"] is not None, "evaluation runs on test set")
+llm.set_client(FakeLLM())
+rep2 = ev.evaluate(2, use_llm=True)
+llm.set_client(None)
+check(set(rep2["prepared"]) == {"rules", "rules+llm_check"} and set(rep2["new"]) == {"rules", "llm"},
+      "evaluation compares rules vs LLM setups")
 
 # ---------------------------------------------------------------- 2. 端到端
 if not os.environ.get("NEO4J_PASSWORD"):
@@ -215,6 +296,14 @@ check({"ai tutor", "calculator"} <= set(cands) and cands["ai tutor"]["participan
       and cands["ai tutor"]["examples"] == ["AI tutors help students."], "emergent candidates report")
 rep = {x["stage"]: x for x in neo4j_store.session_report(sid2)}
 check(rep["recall"]["matched"] == ["5.3"] and rep["recall"]["relations"] == 3, "session report")
+
+llm.set_client(FakeLLM(extract=[{"source": "AI tutors", "relation": "CAUSES", "target": "laziness",
+                                  "negated": False, "stance": "asserted", "evidence": "AI tutors help students"}]))
+pipeline.build_for_session(sid2, "recall", use_llm=True)
+llm.set_client(None)
+edges = q("MATCH ()-[r {graph_id:$g}]->() RETURN r.extractor AS e, r.prepared_id AS p", g=f"{sid2}:recall")
+check({"e": "llm", "p": None} in edges and {"e": "rules", "p": "5.3"} in edges,
+      "neo4j edges store extractor and prepared statement id")
 
 for s_ in (sid, sid2):
     for stage in pipeline.STAGES:

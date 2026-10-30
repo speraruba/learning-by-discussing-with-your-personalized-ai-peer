@@ -130,6 +130,9 @@ class Relation:
     modals: list[str]
     stances: list[str]
     evidence: list[str]
+    extractor: str = "rules"          # rules | llm
+    last_sent: int = -1               # 最后一次出现在第几句(判断受试者最终立场用)
+    prepared_id: str | None = None    # 对应的预设命题 id;None 表示受试者自己提出的新命题
 
 
 @dataclass
@@ -454,6 +457,7 @@ def apply_ontology(mentions: list[Mention], raw: list[RawRelation], onto,
         if rel is None:
             rel = agg[k] = Relation(r.source, r.target, rtype, r.negated, 0, [], [], [], [])
         rel.count += 1
+        rel.last_sent = max(rel.last_sent, r.sent_idx)
         for lst, v in ((rel.predicates, r.predicate), (rel.modals, r.modal),
                        (rel.stances, r.stance), (rel.evidence, r.sentence)):
             if v and v not in lst:

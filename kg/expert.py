@@ -10,6 +10,7 @@
     negated   同一对概念、关系类型在 accept 里,但受试者说了反话(材料肯定而他否认,或反之)
     linked    两个概念之间有别的边(方向或关系类型不同)—— 连上了,但说法不同
     similar   图上没有边,但有句子与命题足够相似(语义相似度兜底,见 similarity.py)
+    llm_matched / llm_negated  以上都没找到,可选的 LLM 核对判为说了/否认了(llm.py,证据须是原话)
     missing   两个概念之间没有边
 - 定义类命题(给了原文时):similar | not_found(提到了源概念但没有足够相似的句子)| not_mentioned。
 """
@@ -22,8 +23,8 @@ import yaml
 from . import ontology as onto_mod
 
 DEFAULT_DIR = Path(__file__).parent / "expert_maps"
-STATUS_ORDER = ("matched", "negated", "linked", "similar", "missing")
-DEFINITION_STATUSES = ("similar", "not_found", "not_mentioned")
+STATUS_ORDER = ("matched", "negated", "linked", "similar", "llm_matched", "llm_negated", "missing")
+DEFINITION_STATUSES = ("similar", "llm_said", "llm_denied", "not_found", "not_mentioned")
 
 
 @dataclass
@@ -88,21 +89,24 @@ def load(topic: int, onto, directory: str | Path | None = None) -> ExpertMap | N
 
 def _prop_status(prop: Proposition, relations) -> tuple[str, list[str]]:
     best, evidence = "missing", []
+    stance_rel = None      # 说了/否认了的边里最后出现的那条:受试者改口时以最终立场为准
     for r in relations:
         if {r.source, r.target} != {prop.source, prop.target}:
             continue
-        same_dir = r.source == prop.source
-        if same_dir and r.type in prop.accept:
-            # 受试者的肯定/否定与材料一致才算 matched;相反则是 negated(说了反话)
-            status = "matched" if r.negated == prop.negated else "negated"
-        else:
-            status = "linked"
-        if STATUS_ORDER.index(status) < STATUS_ORDER.index(best):
-            best, evidence = status, list(r.evidence)
+        if r.source == prop.source and r.type in prop.accept:
+            if stance_rel is None or r.last_sent > stance_rel.last_sent:
+                stance_rel = r
+        elif best == "missing":
+            best, evidence = "linked", list(r.evidence)
+    if stance_rel is not None:
+        # 受试者的肯定/否定与材料一致才算 matched;相反则是 negated(说了反话)
+        best = "matched" if stance_rel.negated == prop.negated else "negated"
+        evidence = list(stance_rel.evidence)
     return best, evidence
 
 
-def score(graph, emap: ExpertMap, rnd: int | None = None, text: str | None = None, onto=None) -> dict:
+def score(graph, emap: ExpertMap, rnd: int | None = None, text: str | None = None, onto=None,
+          llm_check: bool = False) -> dict:
     """受试者图(extract.KnowledgeGraph)对照专家图。rnd 给定时另算该轮必学概念的覆盖。
     给了原文 text 时再做语义相似度核对(similarity.py):定义类命题打分,
     概念 → 概念命题在图上 missing 的,句子足够相似则记为 similar。"""
@@ -124,8 +128,9 @@ def score(graph, emap: ExpertMap, rnd: int | None = None, text: str | None = Non
         by_id = {p.id: p for p in emap.propositions}
         to_check = [by_id[p["id"]] for p in props if p["status"] == "missing"]
         to_check += [p for p in emap.propositions if not p.scorable]
+        used = {e for p in props if p["status"] in ("matched", "negated", "linked") for e in p["evidence"]}
         try:
-            sim = similarity.match(text, emap, onto, to_check)
+            sim = similarity.match(text, emap, onto, to_check, exclude=used)
             sim_note = f"{similarity.SIM_MODEL} (threshold {similarity.threshold():.2f})"
         except similarity.Unavailable as e:
             sim, sim_note = None, f"unavailable: {e}"
@@ -136,6 +141,27 @@ def score(graph, emap: ExpertMap, rnd: int | None = None, text: str | None = Non
                     p.update(status="similar", evidence=r["evidence"], similarity=r["score"])
             definitions = [{"id": p.id, "statement": p.statement, **sim[p.id]}
                            for p in emap.propositions if not p.scorable]
+    llm_note = None
+    if llm_check and text is not None:
+        # 可选的中间核对:规则与相似度都没找到的预设命题,再让 LLM 判断(证据必须是原话)
+        from . import llm
+        by_id = {p.id: p for p in emap.propositions}
+        pending = [by_id[p["id"]] for p in props if p["status"] == "missing"]
+        if definitions is not None:
+            pending += [by_id[d["id"]] for d in definitions if d["status"] in ("not_found", "not_mentioned")]
+        try:
+            judged = llm.judge_prepared(text, pending)
+            llm_note = llm.MODEL
+        except llm.Unavailable as e:
+            judged, llm_note = {}, f"unavailable: {e}"
+        for p in props:
+            j = judged.get(p["id"])
+            if j and j["status"] != "not_said":
+                p.update(status="llm_matched" if j["status"] == "said" else "llm_negated", evidence=j["evidence"])
+        for d in definitions or []:
+            j = judged.get(d["id"])
+            if j and j["status"] != "not_said":
+                d.update(status="llm_said" if j["status"] == "said" else "llm_denied", evidence=j["evidence"])
     counts = {s: sum(1 for p in props if p["status"] == s) for s in STATUS_ORDER}
 
     out = {
@@ -153,6 +179,8 @@ def score(graph, emap: ExpertMap, rnd: int | None = None, text: str | None = Non
     }
     if sim_note:
         out["similarity"] = sim_note
+    if llm_note:
+        out["llm_check"] = llm_note
     if definitions is not None:
         out["definition_counts"] = {s: sum(1 for d in definitions if d["status"] == s)
                                     for s in DEFINITION_STATUSES}

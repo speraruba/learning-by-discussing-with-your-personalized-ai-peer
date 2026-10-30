@@ -1,0 +1,118 @@
+# 主题 2(AI & Cognition)的标注测试集,用于比较几种做法(python -m kg evaluate --topic 2)。
+# 句子是仿照口头回忆/讨论写的,不是真实受试者数据;拿到试点转写稿后应补充进来。
+#
+# 每条:
+#   text    受试者说的话
+#   said    其中表达了的预设命题 id(换说法也算)
+#   denied  其中否认的预设命题 id(以受试者最终立场为准)
+#   new     其中提出的新命题(不在预设里):[源概念关键词列表, 目标概念关键词列表],
+#           预测的新命题两端标签各包含任一关键词即算命中(不分方向)
+#   note    这条测的是什么
+
+items:
+  - text: "Our cognitive resources are limited, like we only have so much attention and memory."
+    said: ["1.1"]
+    note: definition paraphrase
+
+  - text: "If a task is really demanding, it drains your cognitive resources fast."
+    said: ["1.2"]
+    note: definition paraphrase, different verb
+
+  - text: "When your cognitive resources run low you start offloading stuff, like setting reminders."
+    said: ["1.3"]
+    note: link without the concept as grammatical subject
+
+  - text: "Cognitive offloading is basically moving the thinking out of your head onto a notebook or an app."
+    said: ["2.1"]
+    note: definition paraphrase
+
+  - text: "Offloading shifts the cognitive labor from the person to the tool."
+    said: ["2.3"]
+    note: link with a synonym verb
+
+  - text: "I don't really think offloading turns into an extended mind, a calculator is still just a calculator."
+    denied: ["2.4"]
+    note: denial
+
+  - text: "Cognitive labor is the mental work that a task needs, and it can be done by a person or by AI."
+    said: ["3.1", "3.2"]
+    note: two definitions in one sentence
+
+  - text: "Extended mind is when a tool basically works like part of your brain."
+    said: ["4.1"]
+    note: analogy paraphrase
+
+  - text: "With core delegation the AI does the main step for you, so you never actually do that part yourself."
+    said: ["5.1", "5.2"]
+    note: two definitions, second uses pronouns
+
+  - text: "Core delegation leads to performance reliance over time."
+    said: ["5.3"]
+    note: plain link
+
+  - text: "Peripheral delegation is when AI just does small stuff like formatting or finding sources."
+    said: ["6.1"]
+    note: definition paraphrase
+
+  - text: "The article says peripheral delegation leads to skill reallocation, but I'm not sure I buy that."
+    said: ["6.3"]
+    note: reported claim with doubt (recalled, not denied)
+
+  - text: "Performance reliance means you can only do well when the AI is around."
+    said: ["7.1"]
+    note: definition paraphrase
+
+  - text: "It doesn't happen all at once, reliance on AI kind of creeps up on you slowly."
+    said: ["7.2"]
+    note: concept not named exactly; pronoun subject
+
+  - text: "If you take the AI away, you can see how much someone can still do on their own, and that shows how dependent on AI they were."
+    said: ["7.3"]
+    note: link with neither concept named
+
+  - text: "Skill reallocation is when the skills you practice change, like you check answers instead of doing the math."
+    said: ["8.1", "8.2"]
+    note: two definitions via example
+
+  - text: "Skill reallocation actually makes your independent capability stronger."
+    said: ["8.3"]
+    note: link with "make ... stronger"
+
+  - text: "At first I thought core delegation causes performance reliance. But actually I don't think core delegation causes performance reliance, people just get lazy."
+    denied: ["5.3"]
+    note: changes mind; final position is denial
+
+  - text: "Peripheral delegation is useful. It leaves the main thinking to the person."
+    said: ["6.2"]
+    note: pronoun refers to previous sentence
+
+  - text: "Cognitive labor tends to end up concentrated in core delegation when AI takes over the main step."
+    said: ["3.3"]
+    note: link with a phrasal verb
+
+  - text: "Extended mind supports peripheral delegation, since trusted tools handle the side steps."
+    said: ["4.3"]
+    note: plain link plus reason
+
+  - text: "AI tutors make students lazy because they never have to struggle with problems."
+    new: [[["tutor"], ["student", "learner"]]]
+    note: new idea
+
+  - text: "Using calculators all the time weakens your mental math."
+    new: [[["calculator"], ["math"]]]
+    note: new idea with gerund subject
+
+  - text: "Writing notes by hand helps your memory more than typing does."
+    new: [[["note", "writing"], ["memory"]]]
+    note: new idea
+
+  - text: "Social media also eats up your attention."
+    new: [[["social media"], ["attention", "cognitive resources"]]]
+    note: new idea whose target is a listed concept
+
+  - text: "Offloading to ChatGPT saves time but it can hurt deep learning."
+    new: [[["offloading", "chatgpt", "language model"], ["learning"]]]
+    note: new idea mixing a listed concept and a new one
+
+  - text: "Um yeah so I guess that's kind of it, I don't remember much else."
+    note: nothing to find

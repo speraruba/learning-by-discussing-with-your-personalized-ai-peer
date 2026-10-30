@@ -16,7 +16,7 @@
 # 且在这段文本里被提到至少 emergent_min_mentions 次或参与了某条关系。
 # 反复出现的 emergent 概念用 `python -m kg candidates` 列出,由研究者决定是否加进词表。
 
-version: "0.3.0"
+version: "0.4.0"
 
 policy:
   keep_unclassified_concepts: true   # false: 只保留词表内概念及其关系
@@ -288,6 +288,9 @@ relations:
   INTEGRATES_INTO:
     description: source becomes part of target
     triggers: [integrate_into, integrate_with, merge_into, merge_with, turn_into, evolve_into, develop_into]
+  REVEALS:
+    description: source makes target visible or measurable
+    triggers: [reveal, indicate, expose, uncover]
   CONCENTRATES_IN:
     description: source gathers in target
     triggers: [concentrate_in, concentrate_on, center_on, centre_on, focus_on, end_up_in]

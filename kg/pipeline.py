@@ -22,9 +22,9 @@ from datetime import datetime, timezone
 import database as db
 from materials import ROUNDS_PER_TOPIC
 
-from . import expert, extract
+from . import analyze, expert, extract
 
-PIPELINE_VERSION = "kg-0.2.0"
+PIPELINE_VERSION = "kg-0.3.0"
 STAGES = ("recall", "phase1", "phase2", "phase3")
 DISCUSSION_STATES = ("debate", "summary")
 
@@ -64,17 +64,22 @@ def load_stage_text(sid: str, stage: str) -> tuple[str, dict]:
     return "\n\n".join(p if p[-1] in ".!?" else p + "." for p in parts), meta
 
 
-def build_for_session(sid: str, stage: str, write: bool = True) -> dict:
+def build_for_session(sid: str, stage: str, write: bool = True, use_llm: bool | None = None) -> dict:
     """构建一个阶段的图。write=False 时只抽取不写库(调试用)。
+    use_llm:是否用 LLM 抽新命题并核对没找到的预设命题(默认看环境变量 KG_LLM=1)。
     抛 NotReady 表示该阶段还没有文本,调用方可稍后重试。"""
     text, meta = load_stage_text(sid, stage)
-    graph = extract.build_graph(text)
+    use_llm = analyze.llm_enabled_by_default() if use_llm is None else use_llm
+    res = analyze.analyze(text, meta["topic"], None if stage == "recall" else int(stage[-1]),
+                          llm_check=use_llm, llm_new=use_llm)
+    graph, sc = res["graph"], res["score"]
     summary = {**meta, "concepts": len(graph.concepts), "relations": len(graph.relations),
-               "emergent": sum(1 for c in graph.concepts.values() if c.status == "emergent")}
-    emap = expert.load(meta["topic"], extract.get_ontology())
-    sc = expert.score(graph, emap, None if stage == "recall" else int(stage[-1]), text=text) if emap else None
+               "emergent": sum(1 for c in graph.concepts.values() if c.status == "emergent"),
+               "new_statements": sum(1 for r in graph.relations if r.prepared_id is None)}
     if sc:
         summary["score"] = sc
+    if res["llm_new"] is not None:
+        summary["llm_new"] = res["llm_new"]
     if not write:
         return {**summary, "graph": graph.to_dict()}
 
@@ -90,6 +95,8 @@ def build_for_session(sid: str, stage: str, write: bool = True) -> dict:
         "spacy_model": extract.SPACY_MODEL,
         "built_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "emergent_count": summary["emergent"],
+        "new_statement_count": summary["new_statements"],
+        "llm_used": bool(res["llm_new"] and res["llm_new"].get("model")),
     }
     if sc:
         # Neo4j 属性只能是标量或标量列表,命题按状态拆成 id 列表
@@ -104,16 +111,17 @@ def build_for_session(sid: str, stage: str, write: bool = True) -> dict:
         )
         if "definitions" in sc:
             props["definitions_similar"] = [d["id"] for d in sc["definitions"] if d["status"] == "similar"]
+            props["definitions_llm_said"] = [d["id"] for d in sc["definitions"] if d["status"] == "llm_said"]
     out = neo4j_store.write_graph(graph, f"{sid}:{stage}", props, participant=meta["participant"])
     return {**summary, **out}
 
 
-def build_all(sid: str, write: bool = True) -> list[dict]:
+def build_all(sid: str, write: bool = True, use_llm: bool | None = None) -> list[dict]:
     """把一个会话里所有已就绪的阶段都(重新)构建一遍,未就绪的阶段记 skipped。"""
     results = []
     for stage in STAGES:
         try:
-            results.append(build_for_session(sid, stage, write=write))
+            results.append(build_for_session(sid, stage, write=write, use_llm=use_llm))
         except NotReady as e:
             results.append({"session_id": sid, "stage": stage, "skipped": str(e)})
     return results
