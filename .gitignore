@@ -1,0 +1,12 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+
+# Document rendering, local fonts, and machine-specific authoring helpers.
+讨论核心/制作与校验/*
+!讨论核心/制作与校验/stages.json
+!讨论核心/制作与校验/stage_controller.txt
+!讨论核心/制作与校验/peer.txt
