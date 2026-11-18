@@ -20,6 +20,15 @@ context/
 
 ## 从哪里开始读
 
+讨论驱动流程的最新补充（2026-11-18）见下列文件。每个阶段经过多轮交互；controller 每轮读取完整累积对话，只判断当前任务是否完成，程序在完成后按固定顺序注入下一阶段描述，再由 peer 回复。本次为提示词与设计更新，尚未接入运行代码。
+
+- [Stage 描述](../讨论核心/01_Stage_描述.docx)
+- [Stage Controller Prompt](../讨论核心/02_Stage_Controller_Prompt.docx)
+- [Peer Prompt](../讨论核心/03_Peer_Prompt.docx)
+- [讨论驱动系统设计](../讨论核心/04_讨论驱动系统设计.docx)
+- [网站页面流程](../网站页面设计/页面流程.md)
+- 可比较的文本源：[stages.json](../讨论核心/制作与校验/stages.json)、[stage_controller.txt](../讨论核心/制作与校验/stage_controller.txt)、[peer.txt](../讨论核心/制作与校验/peer.txt)。
+
 1. `ai_study_peer_protocol.md`：整合了下面所有文件的研究设计，包括 RQ、DG、实验条件、流程、数据采集、待决策事项（§10）、材料不一致（附录 D）。
 2. 需要核对原始设计时，再看 `design/` 和对应 topic 的 `materials_*`。
 
